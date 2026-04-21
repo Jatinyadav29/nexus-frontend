@@ -33,6 +33,9 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminMessages from "./pages/admin/AdminMessages";
 
+// 🚨 1. IMPORT YOUR NEW NOT FOUND COMPONENT HERE
+import NotFound from "./pages/NotFound";
+
 const AnimatedRoutes = () => {
   const location = useLocation();
 
@@ -197,6 +200,17 @@ const AnimatedRoutes = () => {
             }
           />
         </Route>
+
+        {/* 🚨 2. CATCH-ALL ROUTE (404 NOT FOUND) */}
+        {/* Isko hamesha sabse last mein rakhna hai */}
+        <Route
+          path="*"
+          element={
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );
