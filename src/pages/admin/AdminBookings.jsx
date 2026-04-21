@@ -56,7 +56,7 @@ const AdminBookings = () => {
 
     try {
       // Sending DELETE request for hard removal from DB
-      await api.delete(`/admin/booking/${cancelTarget}`);
+      await api.delete(`/booking/${cancelTarget}`);
 
       // Filtering out the booking completely from UI (No Ghost Bookings!)
       setBookings((prev) => prev.filter((b) => b._id !== cancelTarget));
