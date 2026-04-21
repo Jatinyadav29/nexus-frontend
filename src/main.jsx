@@ -5,8 +5,11 @@ import "./index.css";
 import { AnimatePresence } from "framer-motion";
 import BootLoader from "./components/BootLoader.jsx";
 
-// 🚨 FIX: Changed to AuthProvider to match your context file exactly
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { AuthProvider } from "./context/AuthContext.jsx";
+
+const queryClient = new QueryClient();
 
 const RootComponent = () => {
   const [isBooting, setIsBooting] = useState(() => {
@@ -20,16 +23,15 @@ const RootComponent = () => {
   };
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <AnimatePresence mode="wait">
         {isBooting && <BootLoader onComplete={handleBootComplete} />}
       </AnimatePresence>
 
-      {/* 🚨 FIX: Using AuthProvider here as well */}
       <AuthProvider>
         <App />
       </AuthProvider>
-    </>
+    </QueryClientProvider>
   );
 };
 
