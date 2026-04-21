@@ -6,6 +6,7 @@ import {
   IoChevronDownOutline,
   IoShieldCheckmarkOutline,
   IoPeopleOutline,
+  IoTrashOutline, // 🚨 FIX: Imported Trash Icon for the new modal
 } from "react-icons/io5";
 import useApi from "../../hooks/useApi";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ import { Loader2 } from "lucide-react";
 
 const AdminBookings = () => {
   const api = useApi();
-  const [activeTab, setActiveTab] = useState("stations"); // 'stations' | 'tournaments'
+  const [activeTab, setActiveTab] = useState("stations");
 
   const [bookings, setBookings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
@@ -21,6 +22,9 @@ const AdminBookings = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [expandedTeam, setExpandedTeam] = useState(null);
+
+  // 🚨 FIX 1: New state for our Danger Modal
+  const [cancelTarget, setCancelTarget] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,27 +46,31 @@ const AdminBookings = () => {
     fetchData();
   }, [api]);
 
-  // 🔴 STATION BOOKING CANCEL
-  const handleForceCancel = async (bookingId) => {
-    const confirm = window.confirm("WARNING: FORCE ABORT this deployment?");
-    if (!confirm) return;
-    setActionLoading(bookingId);
+  // 🚨 FIX 2: Trigger Modal instead of window.confirm
+  const initiateCancel = (bookingId) => setCancelTarget(bookingId);
+
+  // 🚨 FIX 3: Hard Erase Function
+  const confirmForceCancel = async () => {
+    if (!cancelTarget) return;
+    setActionLoading(cancelTarget);
+
     try {
-      await api.put(`/admin/booking/${bookingId}/cancel`);
-      setBookings((prev) =>
-        prev.map((b) =>
-          b._id === bookingId ? { ...b, status: "Cancelled" } : b,
-        ),
-      );
-      toast.success("Deployment forcefully aborted.");
+      // Sending DELETE request for hard removal from DB
+      await api.delete(`/admin/booking/${cancelTarget}`);
+
+      // Filtering out the booking completely from UI (No Ghost Bookings!)
+      setBookings((prev) => prev.filter((b) => b._id !== cancelTarget));
+
+      toast.success("DEPLOYMENT ABORTED & ERASED.");
     } catch (error) {
       toast.error(error.response?.data?.message || "Abort failed.");
     } finally {
       setActionLoading(null);
+      setCancelTarget(null);
     }
   };
 
-  // 🟢 TOURNAMENT TEAM STATUS UPDATE (Accept/Reject)
+  // 🟢 TOURNAMENT TEAM STATUS UPDATE
   const handleTeamStatus = async (tournamentId, teamId, status) => {
     setActionLoading(teamId);
     try {
@@ -70,7 +78,6 @@ const AdminBookings = () => {
         status,
       });
 
-      // Update local state smoothly
       setTournaments((prev) =>
         prev.map((t) => {
           if (t._id === tournamentId) {
@@ -102,7 +109,6 @@ const AdminBookings = () => {
     );
   }
 
-  // Extract all teams from all tournaments for easy mapping
   const allTeams = tournaments.flatMap((t) =>
     (t.registeredTeams || []).map((team) => ({
       ...team,
@@ -115,7 +121,7 @@ const AdminBookings = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-6xl mx-auto space-y-6 pb-20"
+      className="max-w-6xl mx-auto space-y-6 pb-20 relative"
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
         <div>
@@ -127,7 +133,6 @@ const AdminBookings = () => {
           </p>
         </div>
 
-        {/* 🚨 PREMIUM TAB SWITCHER */}
         <div className="flex bg-[#0a0a0a] border border-white/10 rounded-2xl p-1 shadow-[0_0_30px_rgba(168,85,247,0.05)]">
           <button
             onClick={() => setActiveTab("stations")}
@@ -230,21 +235,14 @@ const AdminBookings = () => {
                       </td>
                       <td className="p-4 pr-6">
                         <div className="flex items-center justify-end gap-2">
-                          {booking.status !== "Cancelled" &&
-                            booking.status !== "Completed" && (
-                              <button
-                                onClick={() => handleForceCancel(booking._id)}
-                                disabled={actionLoading === booking._id}
-                                className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 disabled:opacity-50"
-                                title="Force Abort Deployment"
-                              >
-                                {actionLoading === booking._id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <IoCloseCircleOutline size={18} />
-                                )}
-                              </button>
-                            )}
+                          <button
+                            onClick={() => initiateCancel(booking._id)}
+                            disabled={actionLoading === booking._id}
+                            className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 disabled:opacity-50"
+                            title="Force Abort Deployment"
+                          >
+                            <IoCloseCircleOutline size={18} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -273,7 +271,6 @@ const AdminBookings = () => {
                 key={team._id}
                 className="bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(234,179,8,0.02)] transition-all"
               >
-                {/* ACCORDION HEADER */}
                 <div
                   onClick={() =>
                     setExpandedTeam(expandedTeam === team._id ? null : team._id)
@@ -324,7 +321,6 @@ const AdminBookings = () => {
                   </div>
                 </div>
 
-                {/* ACCORDION BODY (EXPANDED DETAILS) */}
                 <AnimatePresence>
                   {expandedTeam === team._id && (
                     <motion.div
@@ -341,7 +337,6 @@ const AdminBookings = () => {
                           </h4>
                         </div>
 
-                        {/* Grid of Players */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                           {team.players.map((player, idx) => (
                             <div
@@ -376,7 +371,6 @@ const AdminBookings = () => {
                           ))}
                         </div>
 
-                        {/* Admin Actions */}
                         <div className="flex flex-wrap gap-4 pt-6 border-t border-white/5">
                           <button
                             onClick={() =>
@@ -434,6 +428,49 @@ const AdminBookings = () => {
           )}
         </motion.div>
       )}
+
+      {/* 🚨 FIX 4: PREMIUM DANGER MODAL (Exact same as User side) */}
+      <AnimatePresence>
+        {cancelTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-1000 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-[#0a0a0a] border border-red-500/30 w-full max-w-sm p-8 rounded-[2.5rem] text-center shadow-[0_0_50px_rgba(239,68,68,0.1)]"
+            >
+              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                <IoTrashOutline className="text-4xl text-red-500" />
+              </div>
+              <h2 className="text-2xl font-black uppercase text-white mb-2 tracking-tighter">
+                Force Abort?
+              </h2>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed mb-8 px-4">
+                This will permanently delete the deployment and free up the
+                stations.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setCancelTarget(null)}
+                  className="flex-1 bg-white/5 text-white py-4 rounded-2xl font-black text-[10px] uppercase hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmForceCancel}
+                  className="flex-1 bg-red-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-[0_10px_20px_rgba(220,38,38,0.3)]"
+                >
+                  {actionLoading ? "Erasing..." : "Confirm Erase"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
