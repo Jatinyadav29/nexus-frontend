@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import axios from "axios"; // 🚨 FIX 1: Axios import kiya backend se baat karne ke liye
 
 // 🛡️ 1. Define the Strict Zod Schema
 const contactSchema = z.object({
@@ -32,13 +33,24 @@ const Contact = () => {
     setIsSubmitting(true);
     setSuccessMsg("");
 
-    // Simulate Backend API Call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // 🚨 FIX 2: Fake timer hata kar asli Production API Call laga di
+      const response = await axios.post(
+        "https://nexus-9m3i.onrender.com/api/messages",
+        data,
+      );
 
-    console.log("Transmission Sent:", data);
-    setSuccessMsg("Transmission successful. HQ will contact you shortly.");
-    setIsSubmitting(false);
-    reset(); // Clear the form
+      if (response.status === 201 || response.status === 200) {
+        console.log("Backend Success:", response.data);
+        setSuccessMsg("Transmission successful. HQ will contact you shortly.");
+        reset(); // Form clear kar dega
+      }
+    } catch (error) {
+      console.error("Transmission Failed:", error);
+      alert("System Error: Could not establish comms with HQ. Try again.");
+    } finally {
+      setIsSubmitting(false); // Loader band kar dega chahe pass ho ya fail
+    }
   };
 
   return (
