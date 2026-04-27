@@ -1,5 +1,5 @@
 # 🚀 Nexus 2.0 (Frontend)
-![Nexus Banner](https://drive.google.com/file/d/1bQi_aqOfspse3ZNiYvCId0gkrFtNKE_c/view?usp=drive_link)
+![Nexus Banner](https://res.cloudinary.com/dxsoxrsdf/image/upload/v1777309349/Screenshot_2026-04-27_at_10.32.23_PM_goiynu.png)
 
 **Nexus 2.0** is a centralized productivity and gaming management hub built with a fully custom React architecture. This repository contains the client-side code, featuring dynamic state management, smooth UI animations, and secure routing.
 
