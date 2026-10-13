@@ -20,7 +20,7 @@ const Footer = () => {
               <span className="text-[#5865F2]">Join Discord.</span>
             </h2>
             <a
-              href="https://discord.gg/UkUvntnf"
+              href="https://discord.gg/WMk8aqdRBR"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 bg-white/5 hover:bg-[#5865F2] border border-white/10 hover:border-[#5865F2] text-white pl-6 pr-2 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all group shadow-[0_0_30px_rgba(88,101,242,0.1)] hover:shadow-[0_0_50px_rgba(88,101,242,0.4)]"
@@ -79,7 +79,7 @@ const Footer = () => {
                 ))}
                 <li>
                   <a
-                    href="https://discord.gg/UkUvntnf"
+                    href="https://discord.gg/WMk8aqdRBR"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-bold text-gray-300 hover:text-[#5865F2] flex items-center gap-2 transition-colors"
