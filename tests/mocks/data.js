@@ -52,14 +52,12 @@ export const loginUserShape = (u) => ({
   role: u.role,
 });
 
+// Public shape since migration log ML-013 (SEC-22): no holder, no booking.
 const station = (stationId, n, extra = {}) => ({
   _id: `65f0000000000000000a${String(n).padStart(4, "0")}`,
   stationId,
   type: stationId.startsWith("C") ? "Console" : "PC",
   status: "Available",
-  assignedUser: null,
-  activeBooking: null,
-  ...stamp,
   ...extra,
 });
 
@@ -71,11 +69,7 @@ export const stations = [
   station("C-02", 2),
   station("PC-01", 3),
   station("PC-02", 4),
-  station("PC-03", 5, {
-    status: "Occupied",
-    assignedUser: ids.other,
-    activeBooking: { _id: ids.bookingOther, bookingTime: bookingWindow },
-  }),
+  station("PC-03", 5, { status: "Occupied" }),
   station("PC-04", 6, { status: "Maintenance" }),
   station("PC-05", 7),
   station("PC-06", 8, { status: "Offline" }),
