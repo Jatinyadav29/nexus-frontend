@@ -136,7 +136,7 @@ describe("Payment page", () => {
     expect(calls.filter((c) => c.method !== "GET")).toEqual([]);
   });
 
-  it.fails("SEC-19: card number and CVV are not written to the console", () => {
+  it("SEC-19: card number and CVV are not written to the console", () => {
     vi.spyOn(window, "alert").mockImplementation(() => {});
     const logged = [];
     for (const level of ["log", "info", "debug", "warn", "error"]) {

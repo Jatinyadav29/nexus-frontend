@@ -37,7 +37,6 @@ const Payment = () => {
     alert(
       `Processing fake payment of $${formData.amount} for ${formData.cardName}...`,
     );
-    console.log("Payment Info:", formData);
   };
 
   return (
