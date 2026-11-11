@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import axios from "axios"; // 🚨 FIX 1: Axios import kiya backend se baat karne ke liye
+import useApi from "../hooks/useApi";
 
 // 🛡️ 1. Define the Strict Zod Schema
 const contactSchema = z.object({
@@ -15,6 +15,8 @@ const contactSchema = z.object({
 });
 
 const Contact = () => {
+  // Shared API layer: base URL comes from VITE_API_BASE_URL, never a fixed host.
+  const api = useApi();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -34,11 +36,7 @@ const Contact = () => {
     setSuccessMsg("");
 
     try {
-      // 🚨 FIX 2: Fake timer hata kar asli Production API Call laga di
-      const response = await axios.post(
-        "https://nexus-9m3i.onrender.com/api/messages",
-        data,
-      );
+      const response = await api.post("/messages", data);
 
       if (response.status === 201 || response.status === 200) {
         console.log("Backend Success:", response.data);

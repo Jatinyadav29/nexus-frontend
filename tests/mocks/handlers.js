@@ -1,8 +1,8 @@
 // MSW handlers that behave like the real backend as documented in
 // Nexus/docs/API_CONTRACT.md: same paths, status codes, envelopes and messages.
-// `*/api/...` matches any origin on purpose: the app currently calls three
-// different hosts (configured base URL, hard-coded localhost in Profile.jsx,
-// and the dead Render host in Contact.jsx).
+// `*/api/...` matches any origin on purpose, so tests can point
+// VITE_API_BASE_URL at any host. Every call now goes through the shared API
+// layer (the hard-coded hosts in Profile.jsx and Contact.jsx are gone).
 import { http, HttpResponse, delay } from "msw";
 import * as data from "./data.js";
 

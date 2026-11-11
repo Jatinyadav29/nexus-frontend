@@ -116,19 +116,7 @@ describe("Contact page", () => {
     expect(screen.getByPlaceholderText("John Doe")).toHaveValue(""); // form reset
   });
 
-  it("current behaviour (AUDIT DEP-01): posts to the hard-coded old Render host", async () => {
-    const { calls } = mockApi();
-    renderAt(<Contact />, { route: "/contact" });
-
-    await fill(valid);
-
-    await waitFor(() => expect(lastCall(calls, "POST", "/messages")).toBeTruthy());
-    expect(lastCall(calls, "POST", "/messages").url).toBe(
-      "https://nexus-9m3i.onrender.com/api/messages",
-    );
-  });
-
-  it.fails("DEP-01: posts to the configured API base URL, not the old Render host", async () => {
+  it("DEP-01: posts to the configured API base URL, not the old Render host", async () => {
     const { calls } = mockApi();
     renderAt(<Contact />, { route: "/contact" });
 
@@ -136,6 +124,22 @@ describe("Contact page", () => {
 
     await waitFor(() => expect(lastCall(calls, "POST", "/messages")).toBeTruthy());
     expect(lastCall(calls, "POST", "/messages").url).not.toContain("onrender.com");
+    expect(lastCall(calls, "POST", "/messages").url).toBe("http://localhost:3005/api/messages");
+  });
+
+  it("DEP-01: follows VITE_API_BASE_URL", async () => {
+    vi.stubEnv("VITE_API_BASE_URL", "https://api.example.test/api");
+    try {
+      const { calls } = mockApi();
+      renderAt(<Contact />, { route: "/contact" });
+
+      await fill(valid);
+
+      await waitFor(() => expect(lastCall(calls, "POST", "/messages")).toBeTruthy());
+      expect(lastCall(calls, "POST", "/messages").url).toBe("https://api.example.test/api/messages");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("alerts when the request fails", async () => {

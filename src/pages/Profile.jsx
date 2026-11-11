@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import axios from "axios";
+import useApi from "../hooks/useApi";
 import { AuthContext } from "../context/AuthContext";
 import {
   IoPersonOutline,
@@ -17,7 +17,7 @@ import {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, logout, token } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -28,10 +28,9 @@ const Profile = () => {
     phone: user?.phone || "",
   });
 
-  const api = axios.create({
-    baseURL: "http://localhost:3005/api",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  // Shared API layer: configured base URL + the auth cookie (no Bearer header;
+  // the backend only accepts the cookie).
+  const api = useApi();
 
   const handleUpdate = async (e) => {
     e.preventDefault();

@@ -32,7 +32,7 @@ describe("Profile page", () => {
     return screen.findByRole("button", { name: /Save Changes/ });
   };
 
-  it("current behaviour (AUDIT DEP-02 / contract M-02): save calls PUT on hard-coded localhost with a Bearer header and shows the 404 message", async () => {
+  it("DEP-02 fixed; contract M-02 still open: save calls PUT through the API layer (cookie, no Bearer header) and shows the 404 message", async () => {
     const { calls } = mockApi({ session: "user" });
     const { container } = renderAt(<Profile />, { route: "/profile" });
 
@@ -48,8 +48,8 @@ describe("Profile page", () => {
     // The form state is initialised before the session has loaded, so on a
     // direct page load the untouched username field is sent empty.
     expect(call.body).toEqual({ username: "", phone: "9111111111" });
-    expect(call.authorization).toBe("Bearer undefined");
-    expect(call.credentials).not.toBe("include");
+    expect(call.authorization || "").not.toMatch(/Bearer/);
+    expect(call.credentials).toBe("include");
   });
 
   it("Cancel leaves edit mode without calling the API", async () => {
@@ -90,7 +90,7 @@ describe("Profile page", () => {
     expect(screen.getByTestId("location")).toHaveTextContent("/profile");
   });
 
-  it.fails("DEP-02: profile requests go to the configured API, not hard-coded localhost", async () => {
+  it("DEP-02: profile requests go to the configured API, not hard-coded localhost", async () => {
     // .env.test-style override for this one test
     vi.stubEnv("VITE_API_BASE_URL", "https://api.example.test/api");
     try {
