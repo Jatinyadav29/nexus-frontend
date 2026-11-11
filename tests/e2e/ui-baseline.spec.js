@@ -13,6 +13,7 @@ import { ids } from "../mocks/data.js";
 const T_OPEN = `/tournament/${ids.tournamentOpen}`;
 const T_FULL = `/tournament/${ids.tournamentFull}`;
 const UPDATE = `/booking/update/${ids.bookingMine}`;
+const UPDATE_OTHER = `/booking/update/${ids.bookingOther}`;
 
 // [name, path, text that proves the state rendered, options]
 const PAGES = {
@@ -53,8 +54,11 @@ const PAGES = {
       ["user-payment", "/payment", "Payment Portal"],
       ["user-tournaments", "/tournament", "Winter Clash"],
       ["user-tournament-details", T_OPEN, "Enlist Squad Now"],
-      ["user-update-booking-forbidden", UPDATE, "Forbidden Access.", { full: false }],
-      ["user-sees-admin-shell", "/admin/users", "Operative Registry"],
+      // Someone else's booking: owners can open their own since SEC-17 was fixed.
+      ["user-update-booking-forbidden", UPDATE_OTHER, "Forbidden Access.", { full: false }],
+      // "user-sees-admin-shell" was removed with SEC-20: a normal user is now
+      // redirected away from /admin/*, so that state no longer exists
+      // (covered by tests/unit/admin.test.jsx).
     ],
   },
   "user, empty lists": {
