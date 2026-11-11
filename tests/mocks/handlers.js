@@ -49,6 +49,20 @@ export function createHandlers(overrides = {}) {
   const profileOf = () =>
     state.session === "admin" ? data.profileAdmin : state.session === "user" ? data.profileUser : null;
 
+  // Migration log ML-001 (SEC-02): rosters are served to admins only; everyone
+  // else gets { _id, teamName, status } per team.
+  const forCaller = (tournament) =>
+    state.session === "admin"
+      ? tournament
+      : {
+          ...tournament,
+          registeredTeams: tournament.registeredTeams.map(({ _id, teamName, status }) => ({
+            _id,
+            teamName,
+            status,
+          })),
+        };
+
   // Mirrors isLoggedIn / isAdmin.
   const guard = (level) => {
     if (level === "public") return null;
@@ -157,12 +171,16 @@ export function createHandlers(overrides = {}) {
     // ── Tournaments ──────────────────────────────────────────────────────
     route("get", "/tournaments", "public", () => {
       if (scenario.tournaments === "error") return fail(500, "Error fetching tournaments");
-      return ok({ tournaments: scenario.tournaments === "empty" ? [] : data.tournaments });
+      return ok({
+        tournaments: scenario.tournaments === "empty" ? [] : data.tournaments.map(forCaller),
+      });
     }),
     route("get", "/tournaments/:tournamentId", "public", ({ params }) => {
       if (scenario.tournaments === "error") return fail(500, "Error fetching tournament details");
       const tournament = data.tournaments.find((t) => t._id === params.tournamentId);
-      return tournament ? ok({ tournament }) : fail(404, "Tournament not found");
+      return tournament
+        ? ok({ tournament: forCaller(tournament) })
+        : fail(404, "Tournament not found");
     }),
     route("post", "/tournaments", "admin", ({ body }) =>
       ok(
