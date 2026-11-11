@@ -23,7 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
+# Every env file is ignored; only the value-free template is committed.
+.env*
+!.env.example
 # Test output (baselines in tests/e2e/__screenshots__ ARE committed)
 coverage
 test-results
