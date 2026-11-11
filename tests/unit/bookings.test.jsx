@@ -6,7 +6,7 @@ import Booking from "../../src/pages/Booking.jsx";
 import UpdateBooking from "../../src/components/UpdateBooking.jsx";
 import StationGrid from "../../src/components/StationGrid.jsx";
 import { mockApi } from "../mocks/server.js";
-import { ids } from "../mocks/data.js";
+import { ids, bookings } from "../mocks/data.js";
 import { renderAt, lastCall } from "../utils.jsx";
 
 describe("BookingList", () => {
@@ -138,8 +138,21 @@ describe("UpdateBooking", () => {
     expect(new Date(body.bookingTime.end) - new Date(body.bookingTime.start)).toBe(3 * 3600 * 1000);
   });
 
-  it("current behaviour (AUDIT SEC-17): the owner gets 403, a toast and is sent back", async () => {
-    mockApi({ session: "user" });
+  it("SEC-17 fixed (ML-009): the owner can open their own booking", async () => {
+    const { calls } = mockApi({ session: "user" });
+    const { container } = renderAt(<UpdateBooking />, { route, path });
+
+    await waitFor(() =>
+      expect(container.querySelector('input[type="tel"]')).toHaveValue(
+        bookings.find((b) => b._id === ids.bookingMine).phone,
+      ),
+    );
+    expect(screen.queryByText("Forbidden Access.")).not.toBeInTheDocument();
+    expect(lastCall(calls, "GET", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
+  });
+
+  it("someone who is neither owner nor admin gets 403, a toast and is sent back", async () => {
+    mockApi({ session: "user", bookingById: "forbidden" });
     renderAt(<UpdateBooking />, { route, path });
 
     expect(await screen.findByText("Forbidden Access.")).toBeInTheDocument();

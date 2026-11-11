@@ -153,8 +153,9 @@ export function createHandlers(overrides = {}) {
     route("get", "/bookings/:bookingId", "user", ({ params }) => {
       const booking = data.bookingById(params.bookingId);
       if (!booking) return fail(404, "Not found");
-      // Current backend behaviour: only admins get past the owner check (SEC-17).
-      if (scenario.bookingById === "forbidden" || state.session !== "admin")
+      // Owner or admin only (SEC-17 fixed, migration log ML-009).
+      const isOwner = booking.user?._id === profileOf()._id;
+      if (scenario.bookingById === "forbidden" || (state.session !== "admin" && !isOwner))
         return fail(403, "Forbidden Access.");
       return ok({ booking });
     }),
