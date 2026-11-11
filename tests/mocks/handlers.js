@@ -110,7 +110,15 @@ export function createHandlers(overrides = {}) {
       if (scenario.register === "exists") return fail(422, "User already exists with this email");
       state.session = "user";
       return ok(
-        { user: { _id: data.ids.user, email: body.email, username: body.username } },
+        {
+          user: {
+            _id: data.ids.user,
+            email: body.email,
+            username: body.username,
+            phone: body.phone,
+            role: "User",
+          },
+        },
         201,
       );
     }),

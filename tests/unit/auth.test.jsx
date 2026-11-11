@@ -126,7 +126,7 @@ describe("Login page", () => {
     expect(lastCall(calls, "POST", "/users/login")).toBeUndefined();
   });
 
-  it("current behaviour (contract M-05): the user stored after login has no role or phone", async () => {
+  it("ML-011 (contract M-05 fixed): the user stored after login has role and phone", async () => {
     mockApi();
     const { container } = renderAt(
       <>
@@ -146,6 +146,8 @@ describe("Login page", () => {
       _id: profileAdmin._id,
       email: profileAdmin.email,
       username: profileAdmin.username,
+      phone: profileAdmin.phone,
+      role: "Admin",
     });
   });
 });

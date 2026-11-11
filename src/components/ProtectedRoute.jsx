@@ -19,6 +19,12 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // SEC-20: the admin area is for admins. The server already refuses their
+  // API calls; this keeps other users out of the admin screens themselves.
+  if (location.pathname.startsWith("/admin") && user.role !== "Admin") {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 };
 

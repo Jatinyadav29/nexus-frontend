@@ -250,15 +250,7 @@ describe("Admin route guard (AUDIT SEC-20)", () => {
     expect(await screen.findByText("Restricted Access")).toBeInTheDocument();
   });
 
-  it("current behaviour: a normal user also gets the admin shell", async () => {
-    mockApi({ session: "user" });
-    openApp("/admin/users");
-
-    expect(await screen.findByText("Restricted Access")).toBeInTheDocument();
-    expect(window.location.pathname).toBe("/admin/users");
-  });
-
-  it.fails("SEC-20: a normal user is not shown the admin shell", async () => {
+  it("SEC-20: a normal user is not shown the admin shell", async () => {
     const { calls } = mockApi({ session: "user" });
     openApp("/admin/users");
 
@@ -267,5 +259,24 @@ describe("Admin route guard (AUDIT SEC-20)", () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     expect(screen.queryByText("Restricted Access")).not.toBeInTheDocument();
+  });
+
+  it.each(["/admin", "/admin/users", "/admin/bookings", "/admin/messages", "/admin/settings"])(
+    "SEC-20: a normal user opening %s is sent to the home page",
+    async (url) => {
+      mockApi({ session: "user" });
+      openApp(url);
+
+      await waitFor(() => expect(window.location.pathname).toBe("/"));
+      expect(screen.queryByText("Restricted Access")).not.toBeInTheDocument();
+    },
+  );
+
+  it("SEC-20: a normal user never triggers an admin API call", async () => {
+    const { calls } = mockApi({ session: "user" });
+    openApp("/admin/messages");
+
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+    expect(calls.filter((c) => /\/api\/(admin|messages)/.test(c.path))).toEqual([]);
   });
 });

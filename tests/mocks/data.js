@@ -43,7 +43,14 @@ export const profileAdmin = {
 };
 
 // POST /users/login and /users/register → `user` (no role, no phone)
-export const loginUserShape = (u) => ({ _id: u._id, email: u.email, username: u.username });
+// Migration log ML-011: login/register also return phone and role.
+export const loginUserShape = (u) => ({
+  _id: u._id,
+  email: u.email,
+  username: u.username,
+  phone: u.phone,
+  role: u.role,
+});
 
 const station = (stationId, n, extra = {}) => ({
   _id: `65f0000000000000000a${String(n).padStart(4, "0")}`,
