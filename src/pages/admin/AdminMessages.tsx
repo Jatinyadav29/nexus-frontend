@@ -32,7 +32,7 @@ const AdminMessages = () => {
         if (response.success) {
           setMessages(response.messages);
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to fetch comms from mainframe.");
       } finally {
         setLoading(false);
@@ -50,7 +50,7 @@ const AdminMessages = () => {
         prev.map((msg) => (msg._id === id ? { ...msg, status: "Read" } : msg)),
       );
       toast.success("Transmission marked as Read.");
-    } catch (error) {
+    } catch {
       toast.error("Action failed.");
     } finally {
       setActionLoading(null);
@@ -66,7 +66,7 @@ const AdminMessages = () => {
       await api.messages.remove(deleteTarget);
       setMessages((prev) => prev.filter((msg) => msg._id !== deleteTarget));
       toast.success("Transmission deleted from logs.");
-    } catch (error) {
+    } catch {
       toast.error("Deletion failed.");
     } finally {
       setActionLoading(null);

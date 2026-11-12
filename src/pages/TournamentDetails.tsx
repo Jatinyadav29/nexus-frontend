@@ -98,7 +98,7 @@ const TournamentDetails = () => {
           endTime: end.toTimeString().substring(0, 5),
         });
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch intel");
     } finally {
       setLoading(false);
@@ -115,7 +115,7 @@ const TournamentDetails = () => {
       await api.tournaments.remove(id);
       toast.success("Tournament Aborted Permanently!");
       navigate("/tournament");
-    } catch (error) {
+    } catch {
       toast.error("Failed to abort tournament");
     } finally {
       setDeleteLoading(false);
@@ -144,7 +144,7 @@ const TournamentDetails = () => {
       toast.success("Tournament Intel Updated!");
       setIsEditOpen(false);
       fetchTournamentDetails();
-    } catch (error) {
+    } catch {
       toast.error("Update failed");
     } finally {
       setActionLoading(false);

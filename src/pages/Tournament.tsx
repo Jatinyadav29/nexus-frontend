@@ -73,7 +73,7 @@ const Tournaments = () => {
     try {
       const response = await api.tournaments.list();
       if (response.success) setTournaments(response.tournaments);
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch tournaments");
     } finally {
       setLoading(false);

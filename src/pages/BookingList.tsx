@@ -33,7 +33,7 @@ const BookingList = () => {
       if (response.success) {
         setBookings(response.bookings);
       }
-    } catch (error) {
+    } catch {
       toast.error("COULD NOT SYNC WITH MAINFRAME.");
     } finally {
       setLoading(false);

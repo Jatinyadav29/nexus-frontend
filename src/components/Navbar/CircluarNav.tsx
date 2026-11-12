@@ -124,7 +124,7 @@ const CircularMenu = () => {
       setIsOpen(true);
       try {
         new Audio("/menu-open.mp3").play().catch(() => {});
-      } catch (e) {}
+      } catch {}
 
       gsap.to(overlayRef.current, {
         opacity: 1,
@@ -179,7 +179,7 @@ const CircularMenu = () => {
       setIsOpen(false);
       try {
         new Audio("/menu-open.mp3").play().catch(() => {});
-      } catch (e) {}
+      } catch {}
 
       gsap.to(navRef.current, {
         opacity: 0,
@@ -278,7 +278,7 @@ const CircularMenu = () => {
           activeSegment.style.zIndex = "10";
           try {
             new Audio("/menu-select.mp3").play().catch(() => {});
-          } catch (e) {}
+          } catch {}
         }
       } else {
         if (activeSegment) {
@@ -469,7 +469,7 @@ const CircularMenu = () => {
                   if (isOpen) {
                     try {
                       new Audio("/menu-select.mp3").play().catch(() => {});
-                    } catch (e) {}
+                    } catch {}
                   }
                 }}
               >

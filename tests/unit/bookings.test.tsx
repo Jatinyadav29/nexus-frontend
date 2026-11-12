@@ -1,5 +1,5 @@
 // Booking flows: list, cancel, edit, station grid, and the create wizard.
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BookingList from "../../src/pages/BookingList";
 import Booking from "../../src/pages/Booking";
@@ -165,7 +165,7 @@ describe("UpdateBooking", () => {
 describe("StationGrid", () => {
   it("lists stations from the API and lets the user pick available ones only", async () => {
     mockApi();
-    const onFinalize = vi.fn();
+    const onFinalize = vi.fn<(stationIds: string[]) => void>();
     renderAt(<StationGrid maxSelectable={2} onFinalize={onFinalize} />);
 
     expect(screen.getByText("Scanning Sector for Available Units...")).toBeInTheDocument();

@@ -134,7 +134,7 @@ const UpdateBooking = () => {
 
       toast.success("DEPLOYMENT RE-CALIBRATED!");
       navigate("/bookings");
-    } catch (err) {
+    } catch {
       toast.error("RE-CALIBRATION FAILED.");
     } finally {
       setUpdateLoading(false);

@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import Footer from "./Footer";
@@ -9,7 +9,6 @@ import useApi from "../hooks/useApi"; // Added for logout request
 const Layout = () => {
   const { user } = useContext(AuthContext);
   const api = useApi();
-  const navigate = useNavigate();
 
   const isAdmin = user?.role === "Admin";
 

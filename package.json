@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+    "lint": "oxlint && eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -53,6 +53,7 @@
     "globals": "^17.4.0",
     "jsdom": "^29.1.1",
     "msw": "^3.0.5",
+    "oxlint": "1.93.0",
     "typescript": "^7.0.2",
     "vite": "^8.0.16",
     "vitest": "^5.1.0"

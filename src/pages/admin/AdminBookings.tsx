@@ -42,7 +42,7 @@ const AdminBookings = () => {
 
         if (bookingsRes.success) setBookings(bookingsRes.bookings);
         if (tourneysRes.success) setTournaments(tourneysRes.tournaments);
-      } catch (error) {
+      } catch {
         toast.error("Failed to fetch mainframe data.");
       } finally {
         setLoading(false);
