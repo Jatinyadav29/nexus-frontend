@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 // and payload timestamps are the same on every machine.
 process.env.TZ = "UTC";
 
-// Separate from vite.config.js on purpose: the app's build config is untouched.
+// Separate from vite.config.ts on purpose: the app's build config is untouched.
 export default defineConfig({
   plugins: [react()],
   test: {
@@ -19,7 +19,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text-summary", "text", "html", "json-summary"],
       reportsDirectory: "./coverage",
-      include: ["src/**/*.{js,jsx}"],
+      include: ["src/**/*.{js,jsx,ts,tsx}"],
     },
   },
 });
