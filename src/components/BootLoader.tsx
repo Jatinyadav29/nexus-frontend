@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-const BootLoader = ({ onComplete }) => {
+interface BootLoaderProps {
+  onComplete: () => void;
+}
+
+const BootLoader = ({ onComplete }: BootLoaderProps) => {
   const [progress, setProgress] = useState(0);
   const [text, setText] = useState("INITIALIZING MAINFRAME...");
 

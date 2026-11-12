@@ -3,12 +3,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Monitor, Gamepad2, CheckCircle2, Loader2 } from "lucide-react";
 import useApi from "../hooks/useApi";
 import { toast } from "sonner";
+import type { Station } from "../types/api";
 
-const StationGrid = ({ maxSelectable, onFinalize }) => {
+interface StationGridProps {
+  /** How many stations the squad needs. */
+  maxSelectable: number;
+  /** Called with the chosen stationIds ("PC-01", …). */
+  onFinalize: (stationIds: string[]) => void;
+}
+
+const StationGrid = ({ maxSelectable, onFinalize }: StationGridProps) => {
   const api = useApi();
-  const [stations, setStations] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [hoveredStation, setHoveredStation] = useState(null);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [hoveredStation, setHoveredStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +36,7 @@ const StationGrid = ({ maxSelectable, onFinalize }) => {
     fetchStations();
   }, [api]);
 
-  const handleSelect = (station) => {
+  const handleSelect = (station: Station) => {
     if (station.status !== "Available") return;
 
     if (selectedIds.includes(station.stationId)) {

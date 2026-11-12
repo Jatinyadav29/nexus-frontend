@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoArrowForwardOutline } from "react-icons/io5";
 
-const PlayerSAmount = ({ onSelectionComplete }) => {
+interface PlayerAmountProps {
+  /** Called with the chosen number of players (1–10). */
+  onSelectionComplete: (count: number) => void;
+}
+
+const PlayerSAmount = ({ onSelectionComplete }: PlayerAmountProps) => {
   const [count, setCount] = useState(1);
 
   return (

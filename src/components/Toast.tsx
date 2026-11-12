@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
   IoCheckmarkCircleOutline,
@@ -7,7 +7,15 @@ import {
   IoCloseOutline,
 } from "react-icons/io5";
 
-const Toast = ({ message, type = "success", onClose }) => {
+type ToastType = "success" | "error" | "warning";
+
+interface ToastProps {
+  message: string;
+  type?: ToastType;
+  onClose: () => void;
+}
+
+const Toast = ({ message, type = "success", onClose }: ToastProps) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
@@ -16,7 +24,7 @@ const Toast = ({ message, type = "success", onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const typeStyles = {
+  const typeStyles: Record<ToastType, string> = {
     success:
       "bg-green-500/10 border-green-500/50 text-green-400 shadow-[0_0_30px_rgba(34,197,94,0.2)]",
     error:
@@ -25,7 +33,7 @@ const Toast = ({ message, type = "success", onClose }) => {
       "bg-yellow-500/10 border-yellow-500/50 text-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.2)]",
   };
 
-  const icons = {
+  const icons: Record<ToastType, ReactNode> = {
     success: <IoCheckmarkCircleOutline className="text-2xl shrink-0" />,
     error: <IoAlertCircleOutline className="text-2xl shrink-0" />,
     warning: <IoWarningOutline className="text-2xl shrink-0" />,

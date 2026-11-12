@@ -1,10 +1,10 @@
-import React from "react";
+import React, { type ReactNode } from "react";
 import { motion } from "framer-motion";
 
-const GridStagger = ({ children }) => {
+const GridStagger = ({ children }: { children: ReactNode }) => {
   const columns = 5;
 
-  const ease = [0.76, 0, 0.24, 1];
+  const ease: [number, number, number, number] = [0.76, 0, 0.24, 1];
   const duration = 0.85;
 
   return (
@@ -40,6 +40,6 @@ const GridStagger = ({ children }) => {
   );
 };
 
-export const PageTransition = ({ children }) => {
+export const PageTransition = ({ children }: { children: ReactNode }) => {
   return <GridStagger>{children}</GridStagger>;
 };

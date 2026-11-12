@@ -1,10 +1,10 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, type FormEvent } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 import useApi from "../hooks/useApi";
-import { apiErrorMessage } from "../api";
+import { apiErrorMessage, type BookingView } from "../api";
 import {
   IoChevronBackOutline,
   IoHardwareChipOutline,
@@ -16,14 +16,15 @@ import {
 } from "react-icons/io5";
 
 const UpdateBooking = () => {
-  const { id } = useParams();
+  // Route booking/update/:id always provides the id.
+  const id = useParams().id ?? "";
   const navigate = useNavigate();
   const { user, loading: authLoading } = useContext(AuthContext);
   const api = useApi();
 
   const [loading, setLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [bookingData, setBookingData] = useState(null);
+  const [bookingData, setBookingData] = useState<BookingView | null>(null);
 
   const [formData, setFormData] = useState({
     phone: "",
@@ -72,7 +73,7 @@ const UpdateBooking = () => {
           const startDate = new Date(b.bookingTime.start);
           const endDate = new Date(b.bookingTime.end);
           const diffHours = Math.round(
-            (endDate - startDate) / (1000 * 60 * 60),
+            (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60),
           );
 
           let hours = startDate.getHours();
@@ -105,7 +106,7 @@ const UpdateBooking = () => {
     if (!authLoading && user) fetchBookingDetails();
   }, [id, authLoading, user, api, navigate]); // 🚨 Stable dependencies
 
-  const handleUpdate = async (e) => {
+  const handleUpdate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setUpdateLoading(true);
     try {
@@ -113,10 +114,11 @@ const UpdateBooking = () => {
       let targetDate = new Date();
       if (formData.date === "Tomorrow") targetDate.setDate(now.getDate() + 1);
 
-      let [h, m] = formData.time.split(":");
+      const [hh, m] = formData.time.split(":");
+      let h: string | number = hh;
       if (formData.period === "PM" && h !== "12") h = parseInt(h) + 12;
       if (formData.period === "AM" && h === "12") h = "00";
-      targetDate.setHours(parseInt(h), parseInt(m), 0, 0);
+      targetDate.setHours(parseInt(String(h)), parseInt(m), 0, 0);
 
       const startISO = targetDate.toISOString();
       const endISO = new Date(
@@ -126,7 +128,8 @@ const UpdateBooking = () => {
       await api.bookings.update(id, {
         phone: formData.phone,
         bookingTime: { start: startISO, end: endISO },
-        totalAmount: bookingData.membersCount * formData.duration * 100,
+        // The form only renders once the booking has loaded.
+        totalAmount: bookingData!.membersCount * formData.duration * 100,
       });
 
       toast.success("DEPLOYMENT RE-CALIBRATED!");

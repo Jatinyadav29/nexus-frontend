@@ -20,18 +20,27 @@ const menuItems = [
   { label: "Gallery", icon: <IoImagesSharp />, href: "/gallery" },
 ];
 
+interface MenuConfig {
+  menuSize: number;
+  center: number;
+  innerRadius: number;
+  outerRadius: number;
+  contentRadius: number;
+  isMobile: boolean;
+}
+
 const CircularMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [config, setConfig] = useState(null);
+  const [config, setConfig] = useState<MenuConfig | null>(null);
   const navigate = useNavigate();
 
-  const overlayRef = useRef(null);
-  const joystickRef = useRef(null);
-  const navRef = useRef(null);
-  const segmentsContainerRef = useRef(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const segmentsContainerRef = useRef<HTMLDivElement>(null);
   const isAnimatingRef = useRef(false);
 
-  const getResponsiveConfig = () => {
+  const getResponsiveConfig = (): MenuConfig | null => {
     if (typeof window === "undefined") return null;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -69,7 +78,7 @@ const CircularMenu = () => {
       const startAngle = baseStartAngle + 0.19;
       const endAngle = baseStartAngle + anglePerSegment - 0.19;
 
-      const toRad = (angle) => ((angle - 90) * Math.PI) / 180;
+      const toRad = (angle: number) => ((angle - 90) * Math.PI) / 180;
 
       const innerStartX =
         config.center + config.innerRadius * Math.cos(toRad(startAngle));
@@ -109,7 +118,7 @@ const CircularMenu = () => {
     if (isAnimatingRef.current || !config) return;
     isAnimatingRef.current = true;
 
-    const segmentsDOM = segmentsContainerRef.current.children;
+    const segmentsDOM = segmentsContainerRef.current!.children;
 
     if (!isOpen) {
       setIsOpen(true);
@@ -121,7 +130,9 @@ const CircularMenu = () => {
         opacity: 1,
         duration: 0.3,
         ease: "power2.out",
-        onStart: () => (overlayRef.current.style.pointerEvents = "all"),
+        onStart: () => {
+          overlayRef.current!.style.pointerEvents = "all";
+        },
       });
 
       gsap.to(joystickRef.current, {
@@ -139,7 +150,9 @@ const CircularMenu = () => {
         repeat: 3,
         yoyo: true,
         ease: "power2.inOut",
-        onComplete: () => gsap.set(navRef.current, { opacity: 1 }),
+        onComplete: () => {
+          gsap.set(navRef.current, { opacity: 1 });
+        },
       });
 
       const shuffledIndices = [...Array(segmentsDOM.length).keys()].sort(
@@ -174,7 +187,9 @@ const CircularMenu = () => {
         repeat: 2,
         yoyo: true,
         ease: "power2.inOut",
-        onComplete: () => gsap.set(navRef.current, { opacity: 0 }),
+        onComplete: () => {
+          gsap.set(navRef.current, { opacity: 0 });
+        },
       });
 
       gsap.to(joystickRef.current, {
@@ -195,7 +210,9 @@ const CircularMenu = () => {
           repeat: 2,
           yoyo: true,
           ease: "power2.inOut",
-          onComplete: () => gsap.set(segmentsDOM[origIdx], { opacity: 0 }),
+          onComplete: () => {
+            gsap.set(segmentsDOM[origIdx], { opacity: 0 });
+          },
         });
       });
 
@@ -205,7 +222,7 @@ const CircularMenu = () => {
         delay: 0.6,
         ease: "power2.out",
         onComplete: () => {
-          overlayRef.current.style.pointerEvents = "none";
+          overlayRef.current!.style.pointerEvents = "none";
           isAnimatingRef.current = false;
         },
       });
@@ -223,8 +240,11 @@ const CircularMenu = () => {
       currentY = 0,
       targetX = 0,
       targetY = 0;
-    let activeSegment = null;
-    let animationFrame;
+    // Menu segments are rendered as links (HTMLElements).
+    let activeSegment: HTMLElement | null = null;
+    let animationFrame: number;
+    const segmentContent = (segment: HTMLElement) =>
+      segment.querySelector<HTMLElement>(".segment-content")!;
 
     const animate = () => {
       currentX += (targetX - currentX) * 0.15;
@@ -239,19 +259,21 @@ const CircularMenu = () => {
         const segmentIndex =
           Math.floor(((angle + 90 + 360) % 360) / (360 / menuItems.length)) %
           menuItems.length;
-        const segment = segmentsContainerRef.current.children[segmentIndex];
+        const segment = segmentsContainerRef.current!.children[
+          segmentIndex
+        ] as HTMLElement;
 
         if (segment !== activeSegment) {
           if (activeSegment) {
             activeSegment.style.animation = "";
-            activeSegment.querySelector(".segment-content").style.animation =
+            segmentContent(activeSegment).style.animation =
               "";
             activeSegment.style.zIndex = "1";
           }
           activeSegment = segment;
           activeSegment.style.animation =
             "flickerHover 350ms ease-in-out forwards";
-          activeSegment.querySelector(".segment-content").style.animation =
+          segmentContent(activeSegment).style.animation =
             "contentFlickerHover 350ms ease-in-out forwards";
           activeSegment.style.zIndex = "10";
           try {
@@ -261,7 +283,7 @@ const CircularMenu = () => {
       } else {
         if (activeSegment) {
           activeSegment.style.animation = "";
-          activeSegment.querySelector(".segment-content").style.animation = "";
+          segmentContent(activeSegment).style.animation = "";
           activeSegment.style.zIndex = "1";
           activeSegment = null;
         }
@@ -269,20 +291,18 @@ const CircularMenu = () => {
       animationFrame = requestAnimationFrame(animate);
     };
 
-    const handleDown = (e) => {
+    const handleDown = () => {
       isDragging = true;
       const rect = joystick.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      const drag = (eMove) => {
+      const drag = (eMove: MouseEvent | TouchEvent) => {
         if (!isDragging) return;
-        const clientX = eMove.touches
-          ? eMove.touches[0].clientX
-          : eMove.clientX;
-        const clientY = eMove.touches
-          ? eMove.touches[0].clientY
-          : eMove.clientY;
+        const clientX =
+          "touches" in eMove ? eMove.touches[0].clientX : eMove.clientX;
+        const clientY =
+          "touches" in eMove ? eMove.touches[0].clientY : eMove.clientY;
 
         const deltaX = clientX - centerX;
         const deltaY = clientY - centerY;
@@ -309,7 +329,7 @@ const CircularMenu = () => {
 
         if (activeSegment) {
           activeSegment.style.animation = "";
-          activeSegment.querySelector(".segment-content").style.animation = "";
+          segmentContent(activeSegment).style.animation = "";
           activeSegment.style.zIndex = "1";
 
           const targetHref = activeSegment.getAttribute("href");

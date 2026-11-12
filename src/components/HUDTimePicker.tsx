@@ -5,7 +5,22 @@ import {
   IoFlashOutline,
 } from "react-icons/io5";
 
-const HUDTimePicker = ({ playerCount, onDataUpdate }) => {
+/** What the time step reports to the booking wizard. */
+export interface TimeSelection {
+  selectedDate: string;
+  /** 24-hour "HH:MM" */
+  startTime: string;
+  /** hours */
+  duration: number;
+  totalPrice: number;
+}
+
+interface HUDTimePickerProps {
+  playerCount: number;
+  onDataUpdate: (selection: TimeSelection) => void;
+}
+
+const HUDTimePicker = ({ playerCount, onDataUpdate }: HUDTimePickerProps) => {
   const [data, setData] = useState({
     selectedDate: "Today",
     startTime: "09:00",
@@ -65,7 +80,8 @@ const HUDTimePicker = ({ playerCount, onDataUpdate }) => {
   ];
 
   useEffect(() => {
-    let [h, m] = data.startTime.split(":");
+    const [hh, m] = data.startTime.split(":");
+    let h: string | number = hh;
     if (data.period === "PM" && h !== "12") h = parseInt(h) + 12;
     if (data.period === "AM" && h === "12") h = "00";
 

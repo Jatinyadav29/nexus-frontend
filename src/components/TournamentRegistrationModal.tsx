@@ -1,9 +1,10 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import useApi from "../hooks/useApi";
 import { apiErrorMessage } from "../api";
+import type { Tournament } from "../types/api";
 import { toast } from "sonner";
 import {
   IoCloseOutline,
@@ -15,7 +16,33 @@ import {
   IoCheckmarkCircleOutline, // 🚨 Added Checkmark Icon
 } from "react-icons/io5";
 
-const TournamentRegistrationModal = ({ isOpen, onClose, tournament }) => {
+/**
+ * One row of the squad form. `email` is collected and sent, but the backend
+ * does not store it (contract M-08).
+ */
+interface PlayerFormValue {
+  name: string;
+  inGameId: string;
+  email: string;
+  phone: string;
+}
+
+interface TeamFormValue {
+  teamName: string;
+  players: PlayerFormValue[];
+}
+
+interface TournamentRegistrationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  tournament: Tournament | null;
+}
+
+const TournamentRegistrationModal = ({
+  isOpen,
+  onClose,
+  tournament,
+}: TournamentRegistrationModalProps) => {
   const { user, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const api = useApi();
@@ -24,12 +51,16 @@ const TournamentRegistrationModal = ({ isOpen, onClose, tournament }) => {
   // 🚨 NEW STATE: To track successful submission
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const [teamData, setTeamData] = useState({
+  const [teamData, setTeamData] = useState<TeamFormValue>({
     teamName: "",
-    players: Array(5).fill({ name: "", inGameId: "", email: "", phone: "" }),
+    players: Array<PlayerFormValue>(5).fill({ name: "", inGameId: "", email: "", phone: "" }),
   });
 
-  const handlePlayerChange = (index, field, value) => {
+  const handlePlayerChange = (
+    index: number,
+    field: keyof PlayerFormValue,
+    value: string,
+  ) => {
     const updatedPlayers = [...teamData.players];
     updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
     setTeamData({ ...teamData, players: updatedPlayers });
@@ -55,10 +86,13 @@ const TournamentRegistrationModal = ({ isOpen, onClose, tournament }) => {
     }
   }, [isOpen, user, authLoading, navigate, onClose]);
 
-  const handleRegisterSubmit = async (e) => {
+  const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setActionLoading(true);
     try {
+      // The modal is only opened for a tournament; without one this fails
+      // into the catch below, as it always did.
+      if (!tournament) throw new Error("No tournament selected");
       await api.tournaments.registerTeam(tournament._id, teamData);
       // 🚨 FIX: Removed toast, triggered success screen instead
       setIsSuccess(true);

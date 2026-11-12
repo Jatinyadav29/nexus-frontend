@@ -10,23 +10,38 @@ import { apiErrorMessage } from "../api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 
+// `required_error` and `errorMap` are Zod 3 options; Zod 4 ignores them at
+// runtime, so these two messages are never shown. They are kept as written
+// (the text is frozen) and typed as extra keys next to Zod 4's params.
+const entryTypeParams: z.core.$ZodEnumParams & { required_error: string } = {
+  required_error: "Select your deployment type",
+};
+const acceptRulesParams: z.core.$ZodLiteralParams & {
+  errorMap: () => { message: string };
+} = {
+  errorMap: () => ({ message: "You must accept rules to deploy" }),
+};
+
 const tournamentSchema = z.object({
   teamName: z.string().min(3, "Squad/Team Name must be at least 3 characters"),
   email: z.string().email("Invalid Intel (Email format incorrect)"),
   discordId: z.string().min(3, "Discord ID required for secure comms"),
   gameId: z.string().min(3, "In-game ID (e.g., Riot ID#Tag) is required"),
-  entryType: z.enum(["solo", "squad"], {
-    required_error: "Select your deployment type",
-  }),
-  acceptRules: z.literal(true, {
-    errorMap: () => ({ message: "You must accept rules to deploy" }),
-  }),
+  entryType: z.enum(["solo", "squad"], entryTypeParams),
+  acceptRules: z.literal(true, acceptRulesParams),
 });
+
+type TournamentRegisterValues = z.output<typeof tournamentSchema>;
+
+interface TournamentRegisterFormProps {
+  tournamentName?: string;
+  tournamentId: string;
+}
 
 const TournamentRegisterForm = ({
   tournamentName = "Valorant Prime Circuit",
   tournamentId,
-}) => {
+}: TournamentRegisterFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const api = useApi();
@@ -55,7 +70,7 @@ const TournamentRegisterForm = ({
 
   const entryType = watch("entryType");
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: TournamentRegisterValues) => {
     setIsSubmitting(true);
     setSuccessMsg("");
     try {

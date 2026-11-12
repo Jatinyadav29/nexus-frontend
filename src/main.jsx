@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import { AnimatePresence } from "framer-motion";
-import BootLoader from "./components/BootLoader.jsx";
+import BootLoader from "./components/BootLoader";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
