@@ -9,7 +9,12 @@ import {
   IoTrashOutline, // 🚨 FIX: Imported Trash Icon for the new modal
 } from "react-icons/io5";
 import useApi from "../../hooks/useApi";
-import { apiErrorMessage } from "../../api";
+import {
+  apiErrorMessage,
+  type BookingView,
+  type TournamentWithRosters,
+} from "../../api";
+import type { TeamStatus } from "../../types/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -17,15 +22,15 @@ const AdminBookings = () => {
   const api = useApi();
   const [activeTab, setActiveTab] = useState("stations");
 
-  const [bookings, setBookings] = useState([]);
-  const [tournaments, setTournaments] = useState([]);
+  const [bookings, setBookings] = useState<BookingView[]>([]);
+  const [tournaments, setTournaments] = useState<TournamentWithRosters[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [expandedTeam, setExpandedTeam] = useState(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   // 🚨 FIX 1: New state for our Danger Modal
-  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +52,7 @@ const AdminBookings = () => {
   }, [api]);
 
   // 🚨 FIX 2: Trigger Modal instead of window.confirm
-  const initiateCancel = (bookingId) => setCancelTarget(bookingId);
+  const initiateCancel = (bookingId: string) => setCancelTarget(bookingId);
 
   // 🚨 FIX 3: Hard Erase Function
   const confirmForceCancel = async () => {
@@ -71,7 +76,11 @@ const AdminBookings = () => {
   };
 
   // 🟢 TOURNAMENT TEAM STATUS UPDATE
-  const handleTeamStatus = async (tournamentId, teamId, status) => {
+  const handleTeamStatus = async (
+    tournamentId: string,
+    teamId: string,
+    status: TeamStatus,
+  ) => {
     setActionLoading(teamId);
     try {
       await api.tournaments.setTeamStatus(tournamentId, teamId, { status });
@@ -170,7 +179,7 @@ const AdminBookings = () => {
                 {bookings.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan={6}
                       className="text-center py-10 text-gray-500 text-xs font-bold uppercase tracking-widest"
                     >
                       No Active Deployments.

@@ -152,7 +152,7 @@ const AdminHUD = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan={5}
                     className="p-8 text-center text-xs font-bold text-gray-500 uppercase tracking-widest"
                   >
                     No active deployments found in the database.

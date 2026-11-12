@@ -14,6 +14,8 @@ const contactSchema = z.object({
   message: z.string().min(15, "Transmission too short. Provide more intel."),
 });
 
+type ContactValues = z.output<typeof contactSchema>;
+
 const Contact = () => {
   // Shared API layer: base URL comes from VITE_API_BASE_URL, never a fixed host.
   const api = useApi();
@@ -31,7 +33,7 @@ const Contact = () => {
   });
 
   // 📡 3. Form Submit Handler
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: ContactValues) => {
     setIsSubmitting(true);
     setSuccessMsg("");
 
@@ -139,7 +141,7 @@ const Contact = () => {
             </label>
             <textarea
               {...register("message")}
-              rows="5"
+              rows={5}
               placeholder="Type your message here..."
               className={`w-full bg-[#050505] border ${errors.message ? "border-red-500" : "border-white/10"} rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all resize-none`}
             />

@@ -1,8 +1,8 @@
 // Profile (edit / delete account) and the demo Payment page.
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Profile from "../../src/pages/Profile.jsx";
-import Payment from "../../src/pages/Payment.jsx";
+import Profile from "../../src/pages/Profile";
+import Payment from "../../src/pages/Payment";
 import { mockApi } from "../mocks/server.js";
 import { renderAt, lastCall } from "../utils.jsx";
 

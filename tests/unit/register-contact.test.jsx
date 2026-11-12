@@ -1,8 +1,8 @@
 // Register and Contact: validation, success, error, loading.
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Register from "../../src/pages/Register.jsx";
-import Contact from "../../src/pages/Contact.jsx";
+import Register from "../../src/pages/Register";
+import Contact from "../../src/pages/Contact";
 import { mockApi } from "../mocks/server.js";
 import { renderAt, lastCall } from "../utils.jsx";
 

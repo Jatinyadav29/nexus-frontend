@@ -1,8 +1,8 @@
 // Tournament flows: list, details, team registration, admin create/update/delete.
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Tournament from "../../src/pages/Tournament.jsx";
-import TournamentDetails from "../../src/pages/TournamentDetails.jsx";
+import Tournament from "../../src/pages/Tournament";
+import TournamentDetails from "../../src/pages/TournamentDetails";
 import { mockApi } from "../mocks/server.js";
 import { ids } from "../mocks/data.js";
 import { renderAt, lastCall } from "../utils.jsx";

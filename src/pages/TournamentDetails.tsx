@@ -1,8 +1,10 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, type FormEvent } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import useApi from "../hooks/useApi";
+import { toTournamentStatus } from "../api";
+import type { Tournament } from "../types/api";
 import TournamentRegistrationModal from "../components/TournamentRegistrationModal";
 import { toast } from "sonner";
 import {
@@ -18,20 +20,45 @@ import {
   IoHourglassOutline,
 } from "react-icons/io5";
 
+interface EditTournamentForm {
+  title: string;
+  game: string;
+  description?: string;
+  /** A string once the number input has been edited. */
+  maxTeams: number | string;
+  status: string;
+  selectedDate: Date;
+  /** "HH:MM" */
+  startTime: string;
+  endTime: string;
+}
+
+// Placeholder until the tournament loads; the edit form only opens after.
+const emptyEditForm: EditTournamentForm = {
+  title: "",
+  game: "",
+  maxTeams: "",
+  status: "",
+  selectedDate: new Date(),
+  startTime: "",
+  endTime: "",
+};
+
 const TournamentDetails = () => {
-  const { id } = useParams();
+  // Route tournament/:id always provides the id.
+  const id = useParams().id ?? "";
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const api = useApi();
 
-  const [tournament, setTournament] = useState(null);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
   const isAdmin = user?.role === "Admin";
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState<EditTournamentForm>(emptyEditForm);
 
   // 🚨 DELETE MODAL STATES
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -96,7 +123,7 @@ const TournamentDetails = () => {
     }
   };
 
-  const handleUpdate = async (e) => {
+  const handleUpdate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setActionLoading(true);
     try {
@@ -110,6 +137,7 @@ const TournamentDetails = () => {
 
       await api.tournaments.update(id, {
         ...editForm,
+        status: toTournamentStatus(editForm.status),
         eventTime: { start: start.toISOString(), end: end.toISOString() },
       });
 
@@ -380,7 +408,7 @@ const TournamentDetails = () => {
                       setEditForm({ ...editForm, description: e.target.value })
                     }
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-yellow-500 outline-none transition-all"
-                    rows="3"
+                    rows={3}
                   />
                 </div>
 

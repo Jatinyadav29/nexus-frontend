@@ -1,7 +1,8 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useApi from "../hooks/useApi";
 import { apiErrorMessage } from "../api";
+import type { CreateBookingRequest } from "../types/api";
 import { useNavigate } from "react-router-dom";
 import PlayerAmount from "../components/PlayerAmount";
 import StationGrid from "../components/StationGrid";
@@ -20,7 +21,7 @@ const Booking = () => {
 
   const [step, setStep] = useState(1);
   const [playerCount, setPlayerCount] = useState(0);
-  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,7 +52,7 @@ const Booking = () => {
     }
   }, [user, authLoading, navigate]);
 
-  const handleFinalSubmit = async (e) => {
+  const handleFinalSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -64,7 +65,7 @@ const Booking = () => {
         targetDate.setDate(now.getDate() + 1);
       } else if (formData.selectedDate !== "Today") {
         const [day, month] = formData.selectedDate.split(" ");
-        const monthMap = { April: 3, May: 4 };
+        const monthMap: Record<string, number> = { April: 3, May: 4 };
         targetDate.setDate(parseInt(day));
         targetDate.setMonth(monthMap[month]);
       }
@@ -77,7 +78,7 @@ const Booking = () => {
         targetDate.getTime() + formData.duration * 60 * 60 * 1000,
       ).toISOString();
 
-      const payload = {
+      const payload: CreateBookingRequest = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,

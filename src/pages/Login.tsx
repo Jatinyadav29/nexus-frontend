@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, type FormEvent } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { apiErrorMessage } from "../api";
@@ -12,9 +12,11 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  const from = location.state?.from?.pathname || "/";
+  // Set by ProtectedRoute when it redirects here.
+  const state = location.state as { from?: { pathname?: string } } | null;
+  const from = state?.from?.pathname || "/";
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {

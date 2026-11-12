@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 
-const Toggle = ({ enabled, setEnabled }) => (
+interface ToggleProps {
+  enabled: boolean;
+  setEnabled: (enabled: boolean) => void;
+}
+
+const Toggle = ({ enabled, setEnabled }: ToggleProps) => (
   <button
     onClick={() => setEnabled(!enabled)}
     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent focus:outline-none transition-colors duration-300 ${enabled ? "bg-purple-600" : "bg-gray-700"}`}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import useApi from "../hooks/useApi";
-import { apiErrorMessage } from "../api";
+import { apiErrorMessage, type BookingView } from "../api";
 import { AuthContext } from "../context/AuthContext";
 import {
   IoPersonOutline,
@@ -21,10 +21,10 @@ const BookingList = () => {
   const { user, loading: authLoading } = useContext(AuthContext);
   const api = useApi();
 
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState<BookingView[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [cancelTarget, setCancelTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   // 📡 FETCH ALL BOOKINGS
   const fetchBookings = async () => {
@@ -44,7 +44,7 @@ const BookingList = () => {
     if (!authLoading && user) fetchBookings();
   }, [api, authLoading, user]);
 
-  const initiateCancel = (id) => setCancelTarget(id);
+  const initiateCancel = (id: string) => setCancelTarget(id);
 
   // ❌ DELETE / ABORT BOOKING
   const confirmDelete = async () => {

@@ -1,10 +1,11 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import TournamentRegistrationModal from "../components/TournamentRegistrationModal";
 import useApi from "../hooks/useApi";
 import { apiErrorMessage } from "../api";
+import type { CreateTournamentRequest, Tournament } from "../types/api";
 import { toast } from "sonner";
 import {
   IoTrophyOutline,
@@ -17,19 +18,32 @@ import {
   IoPeopleOutline,
 } from "react-icons/io5";
 
+interface CreateTournamentForm {
+  title: string;
+  game: string;
+  description: string;
+  /** A string once the number input has been edited. */
+  maxTeams: number | string;
+  selectedDate: Date;
+  /** "HH:MM" */
+  startTime: string;
+  endTime: string;
+}
+
 const Tournaments = () => {
   const { user } = useContext(AuthContext);
   const api = useApi();
-  const [tournaments, setTournaments] = useState([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [selectedTournament, setSelectedTournament] = useState(null);
+  const [selectedTournament, setSelectedTournament] =
+    useState<Tournament | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   // 🛠️ CUSTOM UI STATES FOR DATE/TIME
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateTournamentForm>({
     title: "",
     game: "",
     description: "",
@@ -70,13 +84,13 @@ const Tournaments = () => {
     fetchTournaments();
   }, [api]);
 
-  const handleEnlistClick = (tournament) => {
+  const handleEnlistClick = (tournament: Tournament) => {
     setSelectedTournament(tournament);
     setIsRegisterOpen(true);
   };
 
   // 🛡️ ADMIN: Create Tournament Function
-  const handleCreateTournament = async (e) => {
+  const handleCreateTournament = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setActionLoading(true);
     try {
@@ -89,11 +103,11 @@ const Tournaments = () => {
       const [eH, eM] = formData.endTime.split(":");
       end.setHours(parseInt(eH), parseInt(eM), 0);
 
-      const payload = {
+      const payload: CreateTournamentRequest = {
         title: formData.title,
         game: formData.game,
         description: formData.description,
-        maxTeams: formData.maxTeams,
+        maxTeams: Number(formData.maxTeams), // contract M-17
         eventTime: { start: start.toISOString(), end: end.toISOString() },
       };
 

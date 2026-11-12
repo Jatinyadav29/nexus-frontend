@@ -13,6 +13,7 @@ import type {
   Team,
   TeamStatus,
   Tournament,
+  TournamentStatus,
 } from "../types/api";
 
 // ── Bookings ────────────────────────────────────────────────────────────────
@@ -85,3 +86,24 @@ export interface MessageView extends Omit<Message, "status"> {
 }
 
 export const toMessageView = (message: Message): MessageView => message;
+
+// ── Form values → request fields ────────────────────────────────────────────
+
+const TOURNAMENT_STATUSES: readonly TournamentStatus[] = [
+  "Upcoming",
+  "Registration Open",
+  "Live",
+  "Completed",
+  "Cancelled",
+];
+
+/**
+ * A status picked in a <select>, checked against the contract's enum. An
+ * unknown value throws, so the caller's error path runs (the server would
+ * have refused it with a 400 anyway).
+ */
+export const toTournamentStatus = (value: string): TournamentStatus => {
+  const status = TOURNAMENT_STATUSES.find((s) => s === value);
+  if (!status) throw new Error(`Unknown tournament status: ${value}`);
+  return status;
+};

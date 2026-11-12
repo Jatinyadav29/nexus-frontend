@@ -1,8 +1,8 @@
 // Booking flows: list, cancel, edit, station grid, and the create wizard.
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import BookingList from "../../src/pages/BookingList.jsx";
-import Booking from "../../src/pages/Booking.jsx";
+import BookingList from "../../src/pages/BookingList";
+import Booking from "../../src/pages/Booking";
 import UpdateBooking from "../../src/components/UpdateBooking";
 import StationGrid from "../../src/components/StationGrid";
 import { mockApi } from "../mocks/server.js";

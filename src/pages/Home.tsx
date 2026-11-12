@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, type MouseEvent, type ReactNode } from "react";
 import {
   motion,
   useScroll,
@@ -413,15 +413,15 @@ const IntelligenceArchive = () => {
 };
 
 // 🧲 7. Section 6: Mobilize CTA (Magnetic Button)
-const MagneticButton = ({ children }) => {
-  const ref = useRef(null);
+const MagneticButton = ({ children }: { children: ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
   const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.1 });
   const springY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.1 });
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const { clientX, clientY } = e;
     if (!ref.current) return;
     const { left, top, width, height } = ref.current.getBoundingClientRect();

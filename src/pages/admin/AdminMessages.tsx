@@ -10,18 +10,19 @@ import {
   IoTimeOutline,
 } from "react-icons/io5";
 import useApi from "../../hooks/useApi"; // Adjust path if needed
+import type { MessageView } from "../../api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const AdminMessages = () => {
   const api = useApi();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<MessageView[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedMsg, setExpandedMsg] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
+  const [expandedMsg, setExpandedMsg] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // 🚨 NEW STATE: Track which message is being deleted
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // 📡 FETCH MESSAGES FROM BACKEND
   useEffect(() => {
@@ -41,7 +42,7 @@ const AdminMessages = () => {
   }, [api]);
 
   // 🟢 MARK AS READ
-  const handleMarkRead = async (id) => {
+  const handleMarkRead = async (id: string) => {
     setActionLoading(`read-${id}`);
     try {
       await api.messages.markRead(id);

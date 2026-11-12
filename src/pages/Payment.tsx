@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -6,7 +6,7 @@ import { useGSAP } from "@gsap/react";
 gsap.registerPlugin(useGSAP);
 
 const Payment = () => {
-  const container = useRef();
+  const container = useRef<HTMLElement>(null);
   const [formData, setFormData] = useState({
     cardName: "",
     cardNumber: "",
@@ -28,11 +28,11 @@ const Payment = () => {
     { scope: container },
   );
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePayment = (e) => {
+  const handlePayment = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     alert(
       `Processing fake payment of $${formData.amount} for ${formData.cardName}...`,
@@ -83,7 +83,7 @@ const Payment = () => {
                 value={formData.cardNumber}
                 onChange={handleChange}
                 required
-                maxLength="16"
+                maxLength={16}
                 className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none text-white tracking-widest"
                 placeholder="1234 5678 9012 3456"
               />
@@ -100,7 +100,7 @@ const Payment = () => {
                   value={formData.expiry}
                   onChange={handleChange}
                   required
-                  maxLength="5"
+                  maxLength={5}
                   className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none text-white"
                   placeholder="MM/YY"
                 />
@@ -115,7 +115,7 @@ const Payment = () => {
                   value={formData.cvv}
                   onChange={handleChange}
                   required
-                  maxLength="3"
+                  maxLength={3}
                   className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none text-white"
                   placeholder="123"
                 />

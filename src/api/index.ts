@@ -57,6 +57,7 @@ import type {
 
 export { ApiError, apiErrorMessage, getApiBaseUrl, onUnauthorized } from "./client";
 export type * from "./mappers";
+export { toTournamentStatus } from "./mappers";
 
 const id = (value: ObjectId): string => encodeURIComponent(value);
 
