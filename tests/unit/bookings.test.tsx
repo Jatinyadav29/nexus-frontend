@@ -136,8 +136,8 @@ describe("UpdateBooking", () => {
     expect(body.phone).toBe("9555555555");
     expect(body.totalAmount).toBe(2 * 3 * 100); // membersCount × hours × 100
     expect(body.bookingTime?.start).toMatch(/T21:30:00\.000Z$/);
-    const window = must(body.bookingTime);
-    expect(new Date(window.end).getTime() - new Date(window.start).getTime()).toBe(3 * 3600 * 1000);
+    const slot = must(body.bookingTime);
+    expect(new Date(slot.end).getTime() - new Date(slot.start).getTime()).toBe(3 * 3600 * 1000);
   });
 
   it("SEC-17 fixed (ML-009): the owner can open their own booking", async () => {
