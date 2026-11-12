@@ -36,13 +36,12 @@ const Contact = () => {
     setSuccessMsg("");
 
     try {
-      const response = await api.post("/messages", data);
+      // Resolves only on a 2xx answer (the server sends 201).
+      const response = await api.messages.create(data);
 
-      if (response.status === 201 || response.status === 200) {
-        console.log("Backend Success:", response.data);
-        setSuccessMsg("Transmission successful. HQ will contact you shortly.");
-        reset(); // Form clear kar dega
-      }
+      console.log("Backend Success:", response);
+      setSuccessMsg("Transmission successful. HQ will contact you shortly.");
+      reset(); // Form clear kar dega
     } catch (error) {
       console.error("Transmission Failed:", error);
       alert("System Error: Could not establish comms with HQ. Try again.");

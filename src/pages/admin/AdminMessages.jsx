@@ -27,9 +27,9 @@ const AdminMessages = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await api.get("/messages");
-        if (response.data.success) {
-          setMessages(response.data.messages || response.data.data || []);
+        const response = await api.messages.list();
+        if (response.success) {
+          setMessages(response.messages);
         }
       } catch (error) {
         toast.error("Failed to fetch comms from mainframe.");
@@ -44,7 +44,7 @@ const AdminMessages = () => {
   const handleMarkRead = async (id) => {
     setActionLoading(`read-${id}`);
     try {
-      await api.put(`/messages/${id}/read`);
+      await api.messages.markRead(id);
       setMessages((prev) =>
         prev.map((msg) => (msg._id === id ? { ...msg, status: "Read" } : msg)),
       );
@@ -62,7 +62,7 @@ const AdminMessages = () => {
     setActionLoading(`delete-${deleteTarget}`);
 
     try {
-      await api.delete(`/messages/${deleteTarget}`);
+      await api.messages.remove(deleteTarget);
       setMessages((prev) => prev.filter((msg) => msg._id !== deleteTarget));
       toast.success("Transmission deleted from logs.");
     } catch (error) {

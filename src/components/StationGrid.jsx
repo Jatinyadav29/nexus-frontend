@@ -14,9 +14,9 @@ const StationGrid = ({ maxSelectable, onFinalize }) => {
   useEffect(() => {
     const fetchStations = async () => {
       try {
-        const response = await api.get("/stations");
-        if (response.data.success) {
-          setStations(response.data.stations);
+        const response = await api.stations.list();
+        if (response.success) {
+          setStations(response.stations);
         }
       } catch (error) {
         console.error("Failed to fetch stations:", error);

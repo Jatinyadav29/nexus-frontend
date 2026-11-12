@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { apiErrorMessage } from "../api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -21,7 +22,7 @@ const Login = () => {
       toast.success("LOGIN SUCCESSFUL. WELCOME OPERATIVE.");
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Invalid Intel. Try again.");
+      toast.error(apiErrorMessage(err) || "Invalid Intel. Try again.");
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import {
   IoChevronBackOutline,
   IoHardwareChipOutline,
@@ -62,9 +63,9 @@ const UpdateBooking = () => {
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
-        const response = await api.get(`/bookings/${id}`);
-        if (response.data.success) {
-          const b = response.data.booking;
+        const response = await api.bookings.get(id);
+        if (response.success) {
+          const b = response.booking;
           setBookingData(b);
 
           // 🚨 SMART DATA EXTRACTION
@@ -93,7 +94,7 @@ const UpdateBooking = () => {
         }
       } catch (error) {
         toast.error(
-          error.response?.data?.message || "ACCESS DENIED BY MAINFRAME.",
+          apiErrorMessage(error) || "ACCESS DENIED BY MAINFRAME.",
         );
         navigate("/bookings");
       } finally {
@@ -122,7 +123,7 @@ const UpdateBooking = () => {
         targetDate.getTime() + formData.duration * 60 * 60 * 1000,
       ).toISOString();
 
-      await api.put(`/bookings/${id}`, {
+      await api.bookings.update(id, {
         phone: formData.phone,
         bookingTime: { start: startISO, end: endISO },
         totalAmount: bookingData.membersCount * formData.duration * 100,

@@ -16,7 +16,7 @@ const Layout = () => {
   // 🚨 SECURE LOGOUT LOGIC
   const handleLogout = async () => {
     try {
-      await api.post("/users/logout");
+      await api.users.logout();
       window.location.href = "/login"; // Force reload to clear all contexts
     } catch (error) {
       console.error("Logout failed", error);

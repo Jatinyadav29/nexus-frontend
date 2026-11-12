@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { IoShieldCheckmarkOutline } from "react-icons/io5";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "sonner";
 
@@ -58,12 +59,18 @@ const TournamentRegisterForm = ({
     setIsSubmitting(true);
     setSuccessMsg("");
     try {
-      await api.post(`/tournaments/${tournamentId}/register`, data);
+      // Contract M-19: this never-rendered form has no players; the server
+      // requires 5–6, so only the contract fields are sent (the rest were
+      // dropped by the server anyway).
+      await api.tournaments.registerTeam(tournamentId, {
+        teamName: data.teamName,
+        players: [],
+      });
       setSuccessMsg("Registration Confirmed! Squad Enlisted.");
       toast.success("Registration Confirmed! Squad Enlisted.");
       reset();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Deployment failed.");
+      toast.error(apiErrorMessage(err) || "Deployment failed.");
     } finally {
       setIsSubmitting(false);
     }

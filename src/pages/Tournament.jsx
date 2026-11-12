@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import TournamentRegistrationModal from "../components/TournamentRegistrationModal";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { toast } from "sonner";
 import {
   IoTrophyOutline,
@@ -56,8 +57,8 @@ const Tournaments = () => {
 
   const fetchTournaments = async () => {
     try {
-      const response = await api.get("/tournaments");
-      if (response.data.success) setTournaments(response.data.tournaments);
+      const response = await api.tournaments.list();
+      if (response.success) setTournaments(response.tournaments);
     } catch (error) {
       toast.error("Failed to fetch tournaments");
     } finally {
@@ -96,12 +97,12 @@ const Tournaments = () => {
         eventTime: { start: start.toISOString(), end: end.toISOString() },
       };
 
-      await api.post("/tournaments", payload);
+      await api.tournaments.create(payload);
       toast.success("TOURNAMENT DEPLOYED SUCCESSFULLY!");
       setIsAdminOpen(false);
       fetchTournaments();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Deployment Failed");
+      toast.error(apiErrorMessage(error) || "Deployment Failed");
     } finally {
       setActionLoading(false);
     }

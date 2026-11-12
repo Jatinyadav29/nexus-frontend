@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -19,11 +20,11 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/users/register", formData);
+      await api.users.register(formData);
       toast.success("REGISTRATION COMPLETE. LOGIN TO DEPLOY.");
       navigate("/login");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed.");
+      toast.error(apiErrorMessage(err) || "Registration failed.");
     } finally {
       setLoading(false);
     }

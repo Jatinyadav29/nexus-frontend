@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { AuthContext } from "../context/AuthContext";
 import {
   IoPersonOutline,
@@ -36,11 +37,11 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await api.put("/users/profile", formData);
+      await api.users.updateProfile(formData);
       toast.success("PROFILE RECALIBRATED SUCCESSFULLY");
       setIsEditing(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Update Failed");
+      toast.error(apiErrorMessage(err) || "Update Failed");
     } finally {
       setLoading(false);
     }
@@ -49,12 +50,12 @@ const Profile = () => {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await api.delete("/users/profile");
+      await api.users.deleteProfile();
       toast.success("OPERATIVE DATA PURGED. GOODBYE.");
       logout();
       navigate("/");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Deletion Failed");
+      toast.error(apiErrorMessage(err) || "Deletion Failed");
     } finally {
       setLoading(false);
     }

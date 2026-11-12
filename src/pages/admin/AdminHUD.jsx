@@ -9,8 +9,8 @@ const AdminHUD = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["adminDashboardStats"],
     queryFn: async () => {
-      const response = await api.get("/admin/dashboard");
-      return response.data.data;
+      const response = await api.admin.dashboard();
+      return response.data;
     },
   });
 

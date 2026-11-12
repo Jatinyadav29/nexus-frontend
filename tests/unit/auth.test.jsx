@@ -6,6 +6,7 @@ import { AuthContext } from "../../src/context/AuthContext.jsx";
 import Login from "../../src/pages/Login.jsx";
 import Layout from "../../src/components/Layout.jsx";
 import ProtectedRoute from "../../src/components/ProtectedRoute.jsx";
+import { api } from "../../src/api";
 import { mockApi } from "../mocks/server.js";
 import { profileUser, profileAdmin } from "../mocks/data.js";
 import { renderAt, lastCall } from "../utils.jsx";
@@ -60,6 +61,30 @@ describe("AuthContext session restore", () => {
 
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
     expect(lastCall(calls, "POST", "/users/logout")).toBeTruthy();
+  });
+
+  it("M-23: a 401 from any later call clears the user", async () => {
+    mockApi({ session: "user" });
+    renderAt(<Session />);
+    expect(await sessionUser()).toEqual(profileUser);
+
+    // The cookie expires or is revoked: the next authenticated call is a 401.
+    const { calls } = mockApi({ session: "none" });
+    await expect(api.bookings.list()).rejects.toMatchObject({ status: 401 });
+
+    expect(lastCall(calls, "GET", "/bookings")).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+  });
+
+  it("a non-401 failure leaves the user logged in", async () => {
+    mockApi({ session: "user" });
+    renderAt(<Session />);
+    expect(await sessionUser()).toEqual(profileUser);
+
+    mockApi({ session: "user", bookings: "error" });
+    await expect(api.bookings.list()).rejects.toMatchObject({ status: 500 });
+
+    expect(screen.getByTestId("user")).not.toHaveTextContent("null");
   });
 });
 

@@ -1,23 +1,23 @@
 import { createContext, useState, useEffect } from "react";
-import axios from "axios";
+import { api, onUnauthorized } from "../api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const API_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:3005/api";
+
+  // Contract M-23: any 401 means the session is gone; clearing the user lets
+  // ProtectedRoute send the visitor to /login.
+  useEffect(() => onUnauthorized(() => setUser(null)), []);
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const res = await axios.get(`${API_URL}/users/profile`, {
-          withCredentials: true,
-        });
-        setUser(res.data.user);
+        const res = await api.users.profile();
+        setUser(res.user);
       } catch (error) {
-        if (error.response?.status === 401) {
+        if (error.status === 401) {
           setUser(null);
         } else {
           console.error("System Sync Error:", error.message);
@@ -28,25 +28,17 @@ export const AuthProvider = ({ children }) => {
       }
     };
     checkUser();
-  }, [API_URL]);
+  }, []);
 
   const login = async (email, password) => {
-    const res = await axios.post(
-      `${API_URL}/users/login`,
-      { email, password },
-      { withCredentials: true },
-    );
-    setUser(res.data.user);
-    return res.data;
+    const res = await api.users.login({ email, password });
+    setUser(res.user);
+    return res;
   };
 
   const logout = async () => {
     try {
-      await axios.post(
-        `${API_URL}/users/logout`,
-        {},
-        { withCredentials: true },
-      );
+      await api.users.logout();
     } catch (err) {
       console.error("Logout sequence failed", err);
     } finally {

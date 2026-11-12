@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { AuthContext } from "../context/AuthContext";
 import {
   IoPersonOutline,
@@ -28,9 +29,9 @@ const BookingList = () => {
   // 📡 FETCH ALL BOOKINGS
   const fetchBookings = async () => {
     try {
-      const response = await api.get("/bookings");
-      if (response.data.success) {
-        setBookings(response.data.bookings);
+      const response = await api.bookings.list();
+      if (response.success) {
+        setBookings(response.bookings);
       }
     } catch (error) {
       toast.error("COULD NOT SYNC WITH MAINFRAME.");
@@ -52,11 +53,11 @@ const BookingList = () => {
 
     try {
       // 🚨 RESTful DELETE route sync
-      await api.delete(`/bookings/${cancelTarget}`);
+      await api.bookings.remove(cancelTarget);
       setBookings(bookings.filter((b) => b._id !== cancelTarget));
       toast.success("DEPLOYMENT ABORTED SUCCESSFULLY.");
     } catch (error) {
-      toast.error(error.response?.data?.message || "ABORT MISSION FAILED.");
+      toast.error(apiErrorMessage(error) || "ABORT MISSION FAILED.");
     } finally {
       setActionLoading(null);
       setCancelTarget(null);

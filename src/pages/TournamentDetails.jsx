@@ -53,19 +53,19 @@ const TournamentDetails = () => {
 
   const fetchTournamentDetails = async () => {
     try {
-      const response = await api.get(`/tournaments/${id}`);
-      if (response.data.success) {
-        setTournament(response.data.tournament);
+      const response = await api.tournaments.get(id);
+      if (response.success) {
+        setTournament(response.tournament);
 
-        const start = new Date(response.data.tournament.eventTime.start);
-        const end = new Date(response.data.tournament.eventTime.end);
+        const start = new Date(response.tournament.eventTime.start);
+        const end = new Date(response.tournament.eventTime.end);
 
         setEditForm({
-          title: response.data.tournament.title,
-          game: response.data.tournament.game,
-          description: response.data.tournament.description,
-          maxTeams: response.data.tournament.maxTeams,
-          status: response.data.tournament.status,
+          title: response.tournament.title,
+          game: response.tournament.game,
+          description: response.tournament.description,
+          maxTeams: response.tournament.maxTeams,
+          status: response.tournament.status,
           selectedDate: start,
           startTime: start.toTimeString().substring(0, 5),
           endTime: end.toTimeString().substring(0, 5),
@@ -85,7 +85,7 @@ const TournamentDetails = () => {
   const confirmDelete = async () => {
     setDeleteLoading(true);
     try {
-      await api.delete(`/tournaments/${id}`);
+      await api.tournaments.remove(id);
       toast.success("Tournament Aborted Permanently!");
       navigate("/tournament");
     } catch (error) {
@@ -108,7 +108,7 @@ const TournamentDetails = () => {
       const [eH, eM] = editForm.endTime.split(":");
       end.setHours(parseInt(eH), parseInt(eM), 0);
 
-      await api.put(`/tournaments/${id}`, {
+      await api.tournaments.update(id, {
         ...editForm,
         eventTime: { start: start.toISOString(), end: end.toISOString() },
       });

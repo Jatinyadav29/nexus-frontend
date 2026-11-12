@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { useNavigate } from "react-router-dom";
 import PlayerAmount from "../components/PlayerAmount";
 import StationGrid from "../components/StationGrid";
@@ -88,11 +89,11 @@ const Booking = () => {
         totalAmount: formData.totalPrice,
       };
 
-      const res = await api.post("/bookings", payload);
+      const res = await api.bookings.create(payload);
 
-      if (res.data.success) setStep(4);
+      if (res.success) setStep(4);
     } catch (err) {
-      setError(err.response?.data?.message || "Deployment failed.");
+      setError(apiErrorMessage(err) || "Deployment failed.");
     } finally {
       setLoading(false);
     }

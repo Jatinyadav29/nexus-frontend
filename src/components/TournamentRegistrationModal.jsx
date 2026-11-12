@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../context/AuthContext";
 import useApi from "../hooks/useApi";
+import { apiErrorMessage } from "../api";
 import { toast } from "sonner";
 import {
   IoCloseOutline,
@@ -58,11 +59,11 @@ const TournamentRegistrationModal = ({ isOpen, onClose, tournament }) => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      await api.post(`/tournaments/${tournament._id}/register`, teamData);
+      await api.tournaments.registerTeam(tournament._id, teamData);
       // 🚨 FIX: Removed toast, triggered success screen instead
       setIsSuccess(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Deployment failed.");
+      toast.error(apiErrorMessage(err) || "Deployment failed.");
     } finally {
       setActionLoading(false);
     }

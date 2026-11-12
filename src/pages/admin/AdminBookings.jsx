@@ -9,6 +9,7 @@ import {
   IoTrashOutline, // 🚨 FIX: Imported Trash Icon for the new modal
 } from "react-icons/io5";
 import useApi from "../../hooks/useApi";
+import { apiErrorMessage } from "../../api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -30,13 +31,12 @@ const AdminBookings = () => {
     const fetchData = async () => {
       try {
         const [bookingsRes, tourneysRes] = await Promise.all([
-          api.get("/bookings"),
-          api.get("/tournaments"),
+          api.bookings.list(),
+          api.tournaments.listWithRosters(),
         ]);
 
-        if (bookingsRes.data.success) setBookings(bookingsRes.data.bookings);
-        if (tourneysRes.data.success)
-          setTournaments(tourneysRes.data.tournaments);
+        if (bookingsRes.success) setBookings(bookingsRes.bookings);
+        if (tourneysRes.success) setTournaments(tourneysRes.tournaments);
       } catch (error) {
         toast.error("Failed to fetch mainframe data.");
       } finally {
@@ -56,14 +56,14 @@ const AdminBookings = () => {
 
     try {
       // Sending DELETE request for hard removal from DB
-      await api.delete(`/bookings/${cancelTarget}`);
+      await api.bookings.remove(cancelTarget);
 
       // Filtering out the booking completely from UI (No Ghost Bookings!)
       setBookings((prev) => prev.filter((b) => b._id !== cancelTarget));
 
       toast.success("DEPLOYMENT ABORTED & ERASED.");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Abort failed.");
+      toast.error(apiErrorMessage(error) || "Abort failed.");
     } finally {
       setActionLoading(null);
       setCancelTarget(null);
@@ -74,9 +74,7 @@ const AdminBookings = () => {
   const handleTeamStatus = async (tournamentId, teamId, status) => {
     setActionLoading(teamId);
     try {
-      await api.put(`/tournaments/${tournamentId}/team/${teamId}/status`, {
-        status,
-      });
+      await api.tournaments.setTeamStatus(tournamentId, teamId, { status });
 
       setTournaments((prev) =>
         prev.map((t) => {
@@ -92,7 +90,7 @@ const AdminBookings = () => {
 
       toast.success(`Squad ${status.toUpperCase()}!`);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Status update failed.");
+      toast.error(apiErrorMessage(error) || "Status update failed.");
     } finally {
       setActionLoading(null);
     }
