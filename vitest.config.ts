@@ -12,8 +12,8 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     css: false,
-    setupFiles: ["./tests/setup.js"],
-    include: ["tests/unit/**/*.test.{js,jsx}"],
+    setupFiles: ["./tests/setup.ts"],
+    include: ["tests/unit/**/*.test.{ts,tsx}"],
     testTimeout: 15000,
     coverage: {
       provider: "v8",

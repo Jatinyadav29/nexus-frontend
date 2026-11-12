@@ -6,7 +6,7 @@ const PORT = 5183;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "**/*.spec.js",
+  testMatch: "**/*.spec.ts",
   outputDir: "./test-results",
   snapshotPathTemplate: "{testDir}/__screenshots__/{projectName}/{arg}{ext}",
   fullyParallel: true,

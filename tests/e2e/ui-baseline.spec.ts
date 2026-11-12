@@ -7,8 +7,10 @@
 //
 // `full: false` = viewport only (used when a toast or a fixed overlay is the
 // point of the shot; toasts expire while a full-page capture scrolls).
-import { test, expect } from "./fixtures.js";
-import { ids } from "../mocks/data.js";
+import type { Page } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import { ids } from "../mocks/data";
+import type { Scenario } from "../mocks/handlers";
 
 const T_OPEN = `/tournament/${ids.tournamentOpen}`;
 const T_FULL = `/tournament/${ids.tournamentFull}`;
@@ -16,7 +18,9 @@ const UPDATE = `/booking/update/${ids.bookingMine}`;
 const UPDATE_OTHER = `/booking/update/${ids.bookingOther}`;
 
 // [name, path, text that proves the state rendered, options]
-const PAGES = {
+type PageState = [name: string, path: string, ready: string, options?: { full?: boolean }];
+
+const PAGES: Record<string, { scenario: Partial<Scenario>; states: PageState[] }> = {
   "logged out": {
     scenario: {},
     states: [
@@ -189,7 +193,7 @@ test.describe("contact form", () => {
     await api.shot("contact-validation");
   });
 
-  const fill = async (page) => {
+  const fill = async (page: Page) => {
     await page.getByPlaceholder("John Doe").fill("Meera");
     await page.getByPlaceholder("operative@nexus.com").fill("meera@example.test");
     await page.getByPlaceholder("e.g. Pro-Circuit Inquiry").fill("Birthday booking");
@@ -313,7 +317,7 @@ test.describe("booking flow (user)", () => {
     await expect(page.getByText("Enlist: Winter Clash")).toBeVisible();
     await api.shot("tournament-register-form", { fullPage: false });
 
-    const fillRoster = async (teamName) => {
+    const fillRoster = async (teamName: string) => {
       await page.getByPlaceholder("SQUAD NAME (e.g. Nexus Elite)").fill(teamName);
       for (let i = 0; i < 5; i += 1) {
         await page.getByPlaceholder("REAL NAME").nth(i).fill(i ? `Mate ${i}` : "riya");

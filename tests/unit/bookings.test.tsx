@@ -5,9 +5,10 @@ import BookingList from "../../src/pages/BookingList";
 import Booking from "../../src/pages/Booking";
 import UpdateBooking from "../../src/components/UpdateBooking";
 import StationGrid from "../../src/components/StationGrid";
-import { mockApi } from "../mocks/server.js";
-import { ids, bookings } from "../mocks/data.js";
-import { renderAt, lastCall } from "../utils.jsx";
+import { mockApi } from "../mocks/server";
+import { ids, bookings } from "../mocks/data";
+import { renderAt, lastCall, callTo, must, $ } from "../utils";
+import type { CreateBookingRequest, UpdateBookingRequest } from "../../src/types/api";
 
 describe("BookingList", () => {
   it("shows the loading state, then the bookings", async () => {
@@ -81,7 +82,7 @@ describe("BookingList", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirm Abort" }));
 
     expect(await screen.findByText("DEPLOYMENT ABORTED SUCCESSFULLY.")).toBeInTheDocument();
-    expect(lastCall(calls, "DELETE", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
+    expect(callTo(calls, "DELETE", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
     await waitFor(() => expect(screen.queryByText("riya@example.test")).not.toBeInTheDocument());
   });
 
@@ -118,10 +119,10 @@ describe("UpdateBooking", () => {
     const { container } = renderAt(<UpdateBooking />, { route, path });
     await screen.findByText("Operative: riya");
 
-    const phone = container.querySelector('input[type="tel"]');
+    const phone = $(container, 'input[type="tel"]');
     await userEvent.clear(phone);
     await userEvent.type(phone, "9555555555");
-    await userEvent.selectOptions(container.querySelector("select"), "09:30");
+    await userEvent.selectOptions($(container, "select"), "09:30");
     await userEvent.click(screen.getByRole("button", { name: "PM" }));
     await userEvent.click(screen.getByRole("button", { name: "3H" }));
     await userEvent.click(screen.getByRole("button", { name: /CONFIRM RE-CALIBRATION/ }));
@@ -129,13 +130,14 @@ describe("UpdateBooking", () => {
     expect(await screen.findByText("DEPLOYMENT RE-CALIBRATED!")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/bookings"));
 
-    const { body, path: calledPath } = lastCall(calls, "PUT", "/bookings/");
+    const { body, path: calledPath } = callTo<UpdateBookingRequest>(calls, "PUT", "/bookings/");
     expect(calledPath).toBe(`/api/bookings/${ids.bookingMine}`);
     expect(Object.keys(body).sort()).toEqual(["bookingTime", "phone", "totalAmount"]);
     expect(body.phone).toBe("9555555555");
     expect(body.totalAmount).toBe(2 * 3 * 100); // membersCount × hours × 100
-    expect(body.bookingTime.start).toMatch(/T21:30:00\.000Z$/);
-    expect(new Date(body.bookingTime.end) - new Date(body.bookingTime.start)).toBe(3 * 3600 * 1000);
+    expect(body.bookingTime?.start).toMatch(/T21:30:00\.000Z$/);
+    const window = must(body.bookingTime);
+    expect(new Date(window.end).getTime() - new Date(window.start).getTime()).toBe(3 * 3600 * 1000);
   });
 
   it("SEC-17 fixed (ML-009): the owner can open their own booking", async () => {
@@ -144,11 +146,11 @@ describe("UpdateBooking", () => {
 
     await waitFor(() =>
       expect(container.querySelector('input[type="tel"]')).toHaveValue(
-        bookings.find((b) => b._id === ids.bookingMine).phone,
+        must(bookings.find((b) => b._id === ids.bookingMine)).phone,
       ),
     );
     expect(screen.queryByText("Forbidden Access.")).not.toBeInTheDocument();
-    expect(lastCall(calls, "GET", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
+    expect(callTo(calls, "GET", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
   });
 
   it("someone who is neither owner nor admin gets 403, a toast and is sent back", async () => {
@@ -201,11 +203,11 @@ describe("StationGrid", () => {
 });
 
 describe("Booking wizard (create)", () => {
-  const walkToForm = async (container) => {
+  const walkToForm = async (container: HTMLElement) => {
     fireEvent.change(await waitFor(() => {
       const range = container.querySelector('input[type="range"]');
       expect(range).not.toBeNull();
-      return range;
+      return must(range);
     }), { target: { value: "2" } });
     await userEvent.click(await screen.findByText(/CONFIRM 2 PLAYERS/));
     await userEvent.click(await screen.findByText("PC-01"));
@@ -224,7 +226,7 @@ describe("Booking wizard (create)", () => {
     await userEvent.click(screen.getByRole("button", { name: "FINALIZE DEPLOYMENT" }));
 
     expect(await screen.findByText("MISSION ACCOMPLISHED")).toBeInTheDocument();
-    const { body, credentials } = lastCall(calls, "POST", "/bookings");
+    const { body, credentials } = callTo<CreateBookingRequest>(calls, "POST", "/bookings");
     expect(credentials).toBe("include");
     expect(Object.keys(body).sort()).toEqual([
       "bookingTime",
@@ -248,7 +250,9 @@ describe("Booking wizard (create)", () => {
       totalAmount: 2 * 2 * 100, // players × hours × 100, computed in the browser
     });
     expect(body.bookingTime.start).toMatch(/T21:00:00\.000Z$/); // default 09:00 PM
-    expect(new Date(body.bookingTime.end) - new Date(body.bookingTime.start)).toBe(2 * 3600 * 1000);
+    expect(new Date(body.bookingTime.end).getTime() - new Date(body.bookingTime.start).getTime()).toBe(
+      2 * 3600 * 1000,
+    );
   });
 
   it("shows the server's message when the slot clashes with a tournament", async () => {

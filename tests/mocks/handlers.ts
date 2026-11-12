@@ -3,10 +3,52 @@
 // `*/api/...` matches any origin on purpose, so tests can point
 // VITE_API_BASE_URL at any host. Every call now goes through the shared API
 // layer (the hard-coded hosts in Profile.jsx and Contact.jsx are gone).
-import { http, HttpResponse, delay } from "msw";
-import * as data from "./data.js";
+import { http, HttpResponse, delay, type HttpHandler } from "msw";
+import type {
+  CreateBookingRequest,
+  CreateMessageRequest,
+  CreateTournamentRequest,
+  LoginRequest,
+  PlayerInput,
+  RegisterRequest,
+  RegisterTeamRequest,
+  TeamStatusRequest,
+  UpdateBookingRequest,
+} from "../../src/types/api";
+import * as data from "./data";
 
-export const defaultScenario = {
+type Session = "none" | "user" | "admin";
+type Level = "public" | "user" | "admin";
+type Method = "get" | "post" | "put" | "delete";
+type Params = Record<string, string>;
+
+/** One request the mock backend saw, in the order it arrived. */
+export interface ApiCall {
+  method: string;
+  url: string;
+  path: string;
+  /** Parsed JSON body; the raw text when it is not JSON; undefined when empty. */
+  body: unknown;
+  credentials: RequestCredentials;
+  authorization: string | null;
+}
+
+export interface Scenario {
+  session: Session;
+  login: "ok" | "invalid";
+  register: "ok" | "exists";
+  stations: "data" | "empty" | "error";
+  bookings: "data" | "empty" | "error";
+  bookingById: "ok" | "forbidden";
+  bookingCreate: "ok" | "clash";
+  tournaments: "data" | "empty" | "error";
+  messages: "data" | "empty" | "error";
+  dashboard: "ok" | "error";
+  contact: "ok" | "error";
+  delayMs: number;
+}
+
+export const defaultScenario: Scenario = {
   session: "none", // "none" | "user" | "admin"
   login: "ok", // "ok" | "invalid"
   register: "ok", // "ok" | "exists"
@@ -23,7 +65,7 @@ export const defaultScenario = {
 
 // The real backend answers with credentialed CORS headers (app.js:15-20); the
 // browser (and jsdom) refuse cross-origin responses without them.
-const corsHeaders = (request) => ({
+const corsHeaders = (request: Request) => ({
   "Access-Control-Allow-Origin": request.headers.get("origin") || "*",
   "Access-Control-Allow-Credentials": "true",
   "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
@@ -31,27 +73,34 @@ const corsHeaders = (request) => ({
     request.headers.get("access-control-request-headers") || "content-type",
   Vary: "Origin",
 });
-const withCors = (request, response) => {
+const withCors = (request: Request, response: Response) => {
   for (const [name, value] of Object.entries(corsHeaders(request))) {
     response.headers.set(name, value);
   }
   return response;
 };
 
-const ok = (body, status = 200) => HttpResponse.json({ success: true, ...body }, { status });
-const fail = (status, message) => HttpResponse.json({ success: false, message }, { status });
+const ok = (body: object, status = 200) => HttpResponse.json({ success: true, ...body }, { status });
+const fail = (status: number, message: string) => HttpResponse.json({ success: false, message }, { status });
 
-export function createHandlers(overrides = {}) {
-  const scenario = { ...defaultScenario, ...overrides };
-  const state = { session: scenario.session };
-  const calls = [];
+export function createHandlers(overrides: Partial<Scenario> = {}) {
+  const scenario: Scenario = { ...defaultScenario, ...overrides };
+  const state: { session: Session } = { session: scenario.session };
+  const calls: ApiCall[] = [];
 
   const profileOf = () =>
     state.session === "admin" ? data.profileAdmin : state.session === "user" ? data.profileUser : null;
 
+  // For routes behind guard("user"/"admin") or right after a login: there is a session.
+  const sessionProfile = () => {
+    const profile = profileOf();
+    if (!profile) throw new Error("mock backend: no session");
+    return profile;
+  };
+
   // Migration log ML-001 (SEC-02): rosters are served to admins only; everyone
   // else gets { _id, teamName, status } per team.
-  const forCaller = (tournament) =>
+  const forCaller = (tournament: (typeof data.tournaments)[number]) =>
     state.session === "admin"
       ? tournament
       : {
@@ -64,7 +113,7 @@ export function createHandlers(overrides = {}) {
         };
 
   // Mirrors isLoggedIn / isAdmin.
-  const guard = (level) => {
+  const guard = (level: Level): Response | null => {
     if (level === "public") return null;
     if (state.session === "none") return fail(401, "No token provided.");
     if (level === "admin" && state.session !== "admin")
@@ -72,9 +121,16 @@ export function createHandlers(overrides = {}) {
     return null;
   };
 
-  const route = (method, path, level, resolver) =>
+  // `Body` is the request type the contract documents for this route; the
+  // mock trusts it, as the frontend's API layer is what is under test.
+  const route = <Body = undefined>(
+    method: Method,
+    path: string,
+    level: Level,
+    resolver: (ctx: { body: Body; params: Params }) => Response,
+  ): HttpHandler =>
     http[method](`*/api${path}`, async ({ request, params }) => {
-      let body;
+      let body: unknown;
       const text = await request.clone().text();
       try {
         body = text ? JSON.parse(text) : undefined;
@@ -90,10 +146,10 @@ export function createHandlers(overrides = {}) {
         authorization: request.headers.get("authorization"),
       });
       if (scenario.delayMs) await delay(scenario.delayMs);
-      return withCors(request, guard(level) || resolver({ body, params }));
+      return withCors(request, guard(level) || resolver({ body: body as Body, params: params as Params }));
     });
 
-  const handlers = [
+  const handlers: HttpHandler[] = [
     // CORS preflight, answered the way the `cors` middleware does.
     http.options("*/api/*", ({ request }) =>
       withCors(request, new HttpResponse(null, { status: 204 })),
@@ -101,12 +157,12 @@ export function createHandlers(overrides = {}) {
 
     // ── Users ────────────────────────────────────────────────────────────
     route("get", "/users/profile", "user", () => ok({ user: profileOf() })),
-    route("post", "/users/login", "public", ({ body }) => {
+    route<LoginRequest | undefined>("post", "/users/login", "public", ({ body }) => {
       if (scenario.login === "invalid") return fail(401, "Invalid Email or Password");
       state.session = String(body?.email).startsWith("admin") ? "admin" : "user";
-      return ok({ user: data.loginUserShape(profileOf()) });
+      return ok({ user: data.loginUserShape(sessionProfile()) });
     }),
-    route("post", "/users/register", "public", ({ body }) => {
+    route<RegisterRequest>("post", "/users/register", "public", ({ body }) => {
       if (scenario.register === "exists") return fail(422, "User already exists with this email");
       state.session = "user";
       return ok(
@@ -141,7 +197,7 @@ export function createHandlers(overrides = {}) {
       if (scenario.bookings === "error") return fail(500, "Sync Error.");
       return ok({ bookings: scenario.bookings === "empty" ? [] : data.bookings });
     }),
-    route("post", "/bookings", "user", ({ body }) => {
+    route<CreateBookingRequest>("post", "/bookings", "user", ({ body }) => {
       if (scenario.bookingCreate === "clash")
         return fail(400, "Cafe is reserved for 'Winter Clash'.");
       return ok(
@@ -151,7 +207,7 @@ export function createHandlers(overrides = {}) {
             ...data.bookings[0],
             ...body,
             _id: "65f0000000000000000b0009",
-            user: profileOf()._id,
+            user: sessionProfile()._id,
             status: "Active",
           },
         },
@@ -162,12 +218,12 @@ export function createHandlers(overrides = {}) {
       const booking = data.bookingById(params.bookingId);
       if (!booking) return fail(404, "Not found");
       // Owner or admin only (SEC-17 fixed, migration log ML-009).
-      const isOwner = booking.user?._id === profileOf()._id;
+      const isOwner = booking.user._id === sessionProfile()._id;
       if (scenario.bookingById === "forbidden" || (state.session !== "admin" && !isOwner))
         return fail(403, "Forbidden Access.");
       return ok({ booking });
     }),
-    route("put", "/bookings/:bookingId", "user", ({ params, body }) => {
+    route<UpdateBookingRequest>("put", "/bookings/:bookingId", "user", ({ params, body }) => {
       const booking = data.bookings.find((b) => b._id === params.bookingId);
       if (!booking) return fail(404, "Not found");
       return ok({ message: "Re-calibrated!", booking: { ...booking, ...body, user: booking.user._id } });
@@ -191,7 +247,7 @@ export function createHandlers(overrides = {}) {
         ? ok({ tournament: forCaller(tournament) })
         : fail(404, "Tournament not found");
     }),
-    route("post", "/tournaments", "admin", ({ body }) =>
+    route<CreateTournamentRequest>("post", "/tournaments", "admin", ({ body }) =>
       ok(
         {
           tournament: {
@@ -206,7 +262,7 @@ export function createHandlers(overrides = {}) {
         201,
       ),
     ),
-    route("put", "/tournaments/:tournamentId", "admin", ({ params, body }) => {
+    route<Record<string, unknown> | undefined>("put", "/tournaments/:tournamentId", "admin", ({ params, body }) => {
       const tournament = data.tournaments.find((t) => t._id === params.tournamentId);
       if (!tournament) return fail(404, "Tournament not found");
       const { selectedDate, startTime, endTime, ...known } = body || {};
@@ -220,7 +276,7 @@ export function createHandlers(overrides = {}) {
         ? ok({ message: "Tournament deleted successfully. All time slots are now free!" })
         : fail(404, "Tournament not found"),
     ),
-    route("post", "/tournaments/:tournamentId/register", "user", ({ params, body }) => {
+    route<RegisterTeamRequest>("post", "/tournaments/:tournamentId/register", "user", ({ params, body }) => {
       const tournament = data.tournaments.find((t) => t._id === params.tournamentId);
       if (!tournament) return fail(404, "Tournament not found");
       if (tournament.registeredTeams.length >= tournament.maxTeams)
@@ -233,9 +289,9 @@ export function createHandlers(overrides = {}) {
           team: {
             _id: "65f0000000000000000d0009",
             teamName: body.teamName,
-            captain: profileOf()._id,
+            captain: sessionProfile()._id,
             // the backend drops players[].email (contract M-08)
-            players: (body.players || []).map(({ name, inGameId, phone }, i) => ({
+            players: (body.players || []).map(({ name, inGameId, phone }: PlayerInput, i: number) => ({
               _id: `65f0000000000000000f01${String(i).padStart(2, "0")}`,
               name,
               inGameId,
@@ -248,7 +304,7 @@ export function createHandlers(overrides = {}) {
         201,
       );
     }),
-    route("put", "/tournaments/:tournamentId/team/:teamId/status", "admin", ({ params, body }) => {
+    route<TeamStatusRequest>("put", "/tournaments/:tournamentId/team/:teamId/status", "admin", ({ params, body }) => {
       const tournament = data.tournaments.find((t) => t._id === params.tournamentId);
       if (!tournament) return fail(404, "Tournament not found");
       const team = tournament.registeredTeams.find((t) => t._id === params.teamId);
@@ -263,7 +319,7 @@ export function createHandlers(overrides = {}) {
     }),
 
     // ── Messages ─────────────────────────────────────────────────────────
-    route("post", "/messages", "public", ({ body }) => {
+    route<Partial<CreateMessageRequest> | undefined>("post", "/messages", "public", ({ body }) => {
       if (scenario.contact === "error")
         return fail(500, "Something went wrong, please try again later!");
       if (!body?.name || !body?.email || !body?.message)

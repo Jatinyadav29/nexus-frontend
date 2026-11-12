@@ -7,9 +7,9 @@ import Login from "../../src/pages/Login";
 import Layout from "../../src/components/Layout";
 import ProtectedRoute from "../../src/components/ProtectedRoute";
 import { api } from "../../src/api";
-import { mockApi } from "../mocks/server.js";
-import { profileUser, profileAdmin } from "../mocks/data.js";
-import { renderAt, lastCall } from "../utils.jsx";
+import { mockApi } from "../mocks/server";
+import { profileUser, profileAdmin } from "../mocks/data";
+import { renderAt, lastCall, callTo, $ } from "../utils";
 
 const Session = () => {
   const { user, loading, logout } = useContext(AuthContext);
@@ -40,7 +40,7 @@ describe("AuthContext session restore", () => {
     renderAt(<Session />);
 
     expect(await sessionUser()).toEqual(profileUser);
-    const call = lastCall(calls, "GET", "/users/profile");
+    const call = callTo(calls, "GET", "/users/profile");
     expect(call.url).toBe("http://localhost:3005/api/users/profile"); // fallback base URL
     expect(call.credentials).toBe("include");
     expect(call.authorization).toBeNull(); // cookie auth only
@@ -89,9 +89,9 @@ describe("AuthContext session restore", () => {
 });
 
 describe("Login page", () => {
-  const fill = async (container, email, password) => {
-    await userEvent.type(container.querySelector('input[type="email"]'), email);
-    await userEvent.type(container.querySelector('input[type="password"]'), password);
+  const fill = async (container: HTMLElement, email: string, password: string) => {
+    await userEvent.type($(container, 'input[type="email"]'), email);
+    await userEvent.type($(container, 'input[type="password"]'), password);
     await userEvent.click(screen.getByRole("button", { name: "Authenticate" }));
   };
 
@@ -103,7 +103,7 @@ describe("Login page", () => {
 
     expect(await screen.findByText("LOGIN SUCCESSFUL. WELCOME OPERATIVE.")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent(/^\/$/));
-    const call = lastCall(calls, "POST", "/users/login");
+    const call = callTo(calls, "POST", "/users/login");
     expect(call.body).toEqual({ email: "riya@example.test", password: "Password123!" });
     expect(call.credentials).toBe("include");
   });
@@ -137,7 +137,7 @@ describe("Login page", () => {
 
     await fill(container, "riya@example.test", "Password123!");
 
-    const submit = container.querySelector('button[type="submit"]');
+    const submit = $(container, 'button[type="submit"]');
     expect(submit).toBeDisabled();
     expect(submit.querySelector(".animate-spin")).not.toBeNull();
   });

@@ -1,7 +1,7 @@
 // Playwright fixtures for the UI baseline.
 //
 // The browser talks to the SAME MSW handlers the Vitest suite uses
-// (tests/mocks/handlers.js): every request to */api/* is taken off the network
+// (tests/mocks/handlers.ts): every request to */api/* is taken off the network
 // with page.route() and resolved in Node by msw's getResponse(). This needs no
 // service-worker file in public/, so the frozen app is not touched.
 //
@@ -13,22 +13,40 @@
 //   - the boot animation is skipped (sessionStorage.nexus_booted).
 import { test as base, expect } from "@playwright/test";
 import { getResponse } from "msw";
-import { createHandlers } from "../mocks/handlers.js";
+import { createHandlers, type Scenario } from "../mocks/handlers";
+
+/** The mock backend (handlers, call log, state) plus page helpers. */
+export type Api = ReturnType<typeof createHandlers> & {
+  idle: () => Promise<void>;
+  settle: () => Promise<void>;
+  reveal: () => Promise<void>;
+  open: (path: string, ready?: string | RegExp) => Promise<void>;
+  shot: (name: string, options?: { fullPage?: boolean }) => Promise<void>;
+  tick: (ms: number) => Promise<void>;
+};
+
+interface Fixtures {
+  scenario: Partial<Scenario>;
+  api: Api;
+}
 
 export { expect };
 
 // Before every fixture date, so "today" based pickers are stable.
 export const NOW = new Date("2030-01-08T09:00:00.000Z");
 
+// Playwright hands over a Node Buffer; fetch's Request wants a plain byte array.
+const toBody = (buffer: Buffer | null) => (buffer ? new Uint8Array(buffer) : undefined);
+
 const BLANK_PIXEL = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==",
   "base64",
 );
 
-const isApi = (url) => url.pathname.startsWith("/api/");
-const isApp = (url, baseURL) => url.origin === new URL(baseURL).origin;
+const isApi = (url: URL) => url.pathname.startsWith("/api/");
+const isApp = (url: URL, baseURL: string | undefined) => url.origin === new URL(baseURL ?? "").origin;
 
-export const test = base.extend({
+export const test = base.extend<Fixtures>({
   // Per-test override: test.use({ scenario: { session: "admin" } })
   scenario: [{}, { option: true }],
 
@@ -52,9 +70,10 @@ export const test = base.extend({
               method,
               headers,
               credentials: "include",
-              body: method === "GET" || method === "HEAD" ? undefined : req.postDataBuffer(),
+              body: method === "GET" || method === "HEAD" ? undefined : toBody(req.postDataBuffer()),
             }),
           );
+          if (!response) throw new Error(`No mock handler answered ${method} ${req.url()}`);
           await route.fulfill({
             status: response.status,
             headers: Object.fromEntries(response.headers.entries()),
@@ -112,7 +131,7 @@ export const test = base.extend({
     // Scrolls through the page once so scroll-triggered sections are revealed.
     const reveal = async () => {
       const height = await page.evaluate(() => document.documentElement.scrollHeight);
-      const step = page.viewportSize().height;
+      const step = page.viewportSize()?.height ?? 800;
       for (let y = step; y < height; y += step) {
         await page.evaluate((top) => window.scrollTo(0, top), y);
         await page.waitForTimeout(100);
@@ -123,19 +142,19 @@ export const test = base.extend({
       await page.clock.runFor(1500);
     };
 
-    const open = async (path, ready) => {
+    const open = async (path: string, ready?: string | RegExp) => {
       await page.goto(path);
       await settle();
       if (ready) await expect(page.getByText(ready).first()).toBeVisible();
     };
 
-    const shot = async (name, { fullPage = true } = {}) => {
+    const shot = async (name: string, { fullPage = true }: { fullPage?: boolean } = {}) => {
       if (fullPage) await reveal();
       await expect(page).toHaveScreenshot(`${name}.png`, { fullPage });
     };
 
     // Advances the frozen clock without waiting for the API (loading states).
-    const tick = (ms) => page.clock.runFor(ms);
+    const tick = (ms: number) => page.clock.runFor(ms);
 
     await use({ ...mock, idle, settle, reveal, open, shot, tick });
   },

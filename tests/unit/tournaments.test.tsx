@@ -3,9 +3,14 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Tournament from "../../src/pages/Tournament";
 import TournamentDetails from "../../src/pages/TournamentDetails";
-import { mockApi } from "../mocks/server.js";
-import { ids } from "../mocks/data.js";
-import { renderAt, lastCall } from "../utils.jsx";
+import { mockApi } from "../mocks/server";
+import { ids } from "../mocks/data";
+import { renderAt, lastCall, callTo } from "../utils";
+import type {
+  CreateTournamentRequest,
+  RegisterTeamRequest,
+  UpdateTournamentRequest,
+} from "../../src/types/api";
 
 describe("Tournament list", () => {
   it("shows the loading state, then every tournament with its slot count", async () => {
@@ -79,7 +84,7 @@ describe("Tournament list", () => {
     await userEvent.click(screen.getByRole("button", { name: "INITIALIZE CIRCUIT" }));
 
     expect(await screen.findByText("TOURNAMENT DEPLOYED SUCCESSFULLY!")).toBeInTheDocument();
-    const { body } = lastCall(calls, "POST", "/tournaments");
+    const { body } = callTo<CreateTournamentRequest>(calls, "POST", "/tournaments");
     expect(Object.keys(body).sort()).toEqual([
       "description",
       "eventTime",
@@ -120,7 +125,7 @@ describe("Team registration modal", () => {
     return screen.findByText("Enlist: Winter Clash");
   };
 
-  const fillRoster = async (teamName) => {
+  const fillRoster = async (teamName: string) => {
     await userEvent.type(screen.getByPlaceholderText("SQUAD NAME (e.g. Nexus Elite)"), teamName);
     const names = screen.getAllByPlaceholderText("REAL NAME");
     const gameIds = screen.getAllByPlaceholderText("IN-GAME ID");
@@ -163,7 +168,7 @@ describe("Team registration modal", () => {
     await userEvent.click(screen.getByRole("button", { name: "CONFIRM FULL ROSTER" }));
 
     expect(await screen.findByRole("button", { name: "Acknowledge & Refresh" })).toBeInTheDocument();
-    const { body, path, credentials } = lastCall(calls, "POST", "/register");
+    const { body, path, credentials } = callTo<RegisterTeamRequest>(calls, "POST", "/register");
     expect(path).toBe(`/api/tournaments/${ids.tournamentOpen}/register`);
     expect(credentials).toBe("include");
     expect(Object.keys(body).sort()).toEqual(["players", "teamName"]);
@@ -245,7 +250,7 @@ describe("Tournament details", () => {
     await userEvent.click(screen.getByRole("button", { name: "CONFIRM UPDATE" }));
 
     expect(await screen.findByText("Tournament Intel Updated!")).toBeInTheDocument();
-    const { body, path: called } = lastCall(calls, "PUT", "/tournaments/");
+    const { body, path: called } = callTo<UpdateTournamentRequest & Record<string, unknown>>(calls, "PUT", "/tournaments/");
     expect(called).toBe(`/api/tournaments/${ids.tournamentOpen}`);
     // current behaviour: UI-only fields are sent along with the real ones
     expect(Object.keys(body).sort()).toEqual([
@@ -277,7 +282,7 @@ describe("Tournament details", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirm Abort" }));
 
     expect(await screen.findByText("Tournament Aborted Permanently!")).toBeInTheDocument();
-    expect(lastCall(calls, "DELETE", "/tournaments/").path).toBe(
+    expect(callTo(calls, "DELETE", "/tournaments/").path).toBe(
       `/api/tournaments/${ids.tournamentOpen}`,
     );
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/tournament"));

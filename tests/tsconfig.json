@@ -1,0 +1,8 @@
+{
+  // Tests (Vitest unit tests, MSW mocks, Playwright e2e). Type-checked only.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom/vitest"]
+  },
+  "include": [".", "../src"]
+}

@@ -2,6 +2,14 @@
 // (key lists are the ones asserted by the backend contract tests).
 // Shared by the Vitest suite (msw/node) and the Playwright UI baseline
 // (msw/browser), so both see the same API.
+import type {
+  BookingType,
+  BookingUserRef,
+  ProfileUser,
+  Station,
+  TeamStatus,
+  TournamentStatus,
+} from "../../src/types/api";
 
 const stamp = { createdAt: "2030-01-01T09:00:00.000Z", updatedAt: "2030-01-01T09:00:00.000Z", __v: 0 };
 
@@ -20,7 +28,7 @@ export const ids = {
 };
 
 // GET /users/profile → `user`
-export const profileUser = {
+export const profileUser: ProfileUser & { __v: number } = {
   _id: ids.user,
   email: "riya@example.test",
   username: "riya",
@@ -31,7 +39,7 @@ export const profileUser = {
   ...stamp,
 };
 
-export const profileAdmin = {
+export const profileAdmin: ProfileUser & { __v: number } = {
   _id: ids.admin,
   email: "admin@example.test",
   username: "commander",
@@ -44,7 +52,7 @@ export const profileAdmin = {
 
 // POST /users/login and /users/register → `user` (no role, no phone)
 // Migration log ML-011: login/register also return phone and role.
-export const loginUserShape = (u) => ({
+export const loginUserShape = (u: ProfileUser) => ({
   _id: u._id,
   email: u.email,
   username: u.username,
@@ -53,7 +61,7 @@ export const loginUserShape = (u) => ({
 });
 
 // Public shape since migration log ML-013 (SEC-22): no holder, no booking.
-const station = (stationId, n, extra = {}) => ({
+const station = (stationId: string, n: number, extra: Partial<Station> = {}): Station => ({
   _id: `65f0000000000000000a${String(n).padStart(4, "0")}`,
   stationId,
   type: stationId.startsWith("C") ? "Console" : "PC",
@@ -75,17 +83,30 @@ export const stations = [
   station("PC-06", 8, { status: "Offline" }),
 ];
 
-const booking = (extra) => ({
+interface BookingFixtureExtra {
+  _id: string;
+  user: BookingUserRef;
+  name?: string;
+  email?: string;
+  phone?: string;
+  bookingType?: BookingType;
+  membersCount?: number;
+  membersName?: string[];
+  stations?: string[];
+  totalAmount?: number;
+}
+
+const booking = (extra: BookingFixtureExtra) => ({
   stations: ["PC-01", "PC-02"],
   name: "riya",
   email: profileUser.email,
   phone: "9123456780",
-  bookingType: "PC",
+  bookingType: "PC" as BookingType,
   membersCount: 2,
   membersName: ["riya"],
   bookingTime: bookingWindow,
   totalAmount: 400,
-  status: "Active",
+  status: "Active" as const,
   ...stamp,
   ...extra,
 });
@@ -111,19 +132,19 @@ export const bookings = [
 ];
 
 // GET /bookings/:id → `booking` (user populated: _id, username)
-export const bookingById = (id) => {
+export const bookingById = (id: string) => {
   const found = bookings.find((b) => b._id === id);
   return found && { ...found, user: { _id: found.user._id, username: found.user.username } };
 };
 
-const player = (n) => ({
+const player = (n: number) => ({
   _id: `65f0000000000000000f${String(n).padStart(4, "0")}`,
   name: `Player ${n}`,
   inGameId: `player#${n}`,
   phone: `90000000${String(n).padStart(2, "0")}`,
 });
 
-const team = (_id, teamName, captain, status, firstPlayer) => ({
+const team = (_id: string, teamName: string, captain: string, status: TeamStatus, firstPlayer: number) => ({
   _id,
   teamName,
   captain,
@@ -132,15 +153,25 @@ const team = (_id, teamName, captain, status, firstPlayer) => ({
   assignedPCs: [],
 });
 
-const tournament = (extra) => ({
+interface TournamentFixtureExtra {
+  _id: string;
+  title: string;
+  game: string;
+  eventTime: { start: string; end: string };
+  maxTeams: number;
+  status?: TournamentStatus;
+  registeredTeams?: ReturnType<typeof team>[];
+}
+
+const tournament = (extra: TournamentFixtureExtra) => ({
   description: "Five versus five, single elimination.",
   prize: "TBD",
   entryFee: "Free",
   format: "5v5 Standard",
   thumbnail: "https://images.unsplash.com/photo-1542751371-adc38448a05e",
   rules: [],
-  registeredTeams: [],
-  status: "Upcoming",
+  registeredTeams: [] as ReturnType<typeof team>[],
+  status: "Upcoming" as TournamentStatus,
   ...stamp,
   ...extra,
 });

@@ -3,8 +3,8 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Profile from "../../src/pages/Profile";
 import Payment from "../../src/pages/Payment";
-import { mockApi } from "../mocks/server.js";
-import { renderAt, lastCall } from "../utils.jsx";
+import { mockApi } from "../mocks/server";
+import { renderAt, lastCall, callTo, must, $ } from "../utils";
 
 describe("Profile page", () => {
   it("renders nothing for a logged-out visitor", async () => {
@@ -24,11 +24,11 @@ describe("Profile page", () => {
     expect(screen.getByRole("heading", { name: "riya" })).toBeInTheDocument();
   });
 
-  const openEdit = async (container) => {
+  const openEdit = async (container: HTMLElement) => {
     await screen.findByText("riya@example.test");
     // the edit toggle is an icon-only button next to the name
-    const toggle = [...container.querySelectorAll("button")].find((b) => !b.textContent.trim());
-    await userEvent.click(toggle);
+    const toggle = [...container.querySelectorAll("button")].find((b) => !b.textContent?.trim());
+    await userEvent.click(must(toggle, "the edit toggle"));
     return screen.findByRole("button", { name: /Save Changes/ });
   };
 
@@ -37,13 +37,13 @@ describe("Profile page", () => {
     const { container } = renderAt(<Profile />, { route: "/profile" });
 
     const save = await openEdit(container);
-    const phone = container.querySelector('input[type="tel"]');
+    const phone = $(container, 'input[type="tel"]');
     await userEvent.clear(phone);
     await userEvent.type(phone, "9111111111");
     await userEvent.click(save);
 
     expect(await screen.findByText("API Endpoint Not Found!")).toBeInTheDocument();
-    const call = lastCall(calls, "PUT", "/users/profile");
+    const call = callTo(calls, "PUT", "/users/profile");
     expect(call.url).toBe("http://localhost:3005/api/users/profile");
     // The form state is initialised before the session has loaded, so on a
     // direct page load the untouched username field is sent empty.
@@ -83,7 +83,7 @@ describe("Profile page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirm Purge" }));
 
     expect(await screen.findByText("API Endpoint Not Found!")).toBeInTheDocument();
-    expect(lastCall(calls, "DELETE", "/users/profile").url).toBe(
+    expect(callTo(calls, "DELETE", "/users/profile").url).toBe(
       "http://localhost:3005/api/users/profile",
     );
     expect(lastCall(calls, "POST", "/users/logout")).toBeUndefined();
@@ -99,7 +99,7 @@ describe("Profile page", () => {
       await userEvent.click(await openEdit(container));
 
       await waitFor(() => expect(lastCall(calls, "PUT", "/users/profile")).toBeTruthy());
-      expect(lastCall(calls, "PUT", "/users/profile").url).toBe(
+      expect(callTo(calls, "PUT", "/users/profile").url).toBe(
         "https://api.example.test/api/users/profile",
       );
     } finally {
@@ -117,11 +117,11 @@ describe("Payment page", () => {
     amount: "500",
   };
 
-  const submit = (container) => {
+  const submit = (container: HTMLElement) => {
     for (const [name, value] of Object.entries(card)) {
-      fireEvent.change(container.querySelector(`[name="${name}"]`), { target: { name, value } });
+      fireEvent.change($(container, `[name="${name}"]`), { target: { name, value } });
     }
-    fireEvent.submit(container.querySelector("form"));
+    fireEvent.submit($(container, "form"));
   };
 
   it("submitting shows the demo alert and sends nothing to any server", () => {
@@ -138,9 +138,12 @@ describe("Payment page", () => {
 
   it("SEC-19: card number and CVV are not written to the console", () => {
     vi.spyOn(window, "alert").mockImplementation(() => {});
-    const logged = [];
-    for (const level of ["log", "info", "debug", "warn", "error"]) {
-      vi.spyOn(console, level).mockImplementation((...args) => logged.push(JSON.stringify(args)));
+    const logged: string[] = [];
+    const levels = ["log", "info", "debug", "warn", "error"] as const;
+    for (const level of levels) {
+      vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        logged.push(JSON.stringify(args));
+      });
     }
     mockApi({ session: "user" });
     const { container } = renderAt(<Payment />, { route: "/payment" });

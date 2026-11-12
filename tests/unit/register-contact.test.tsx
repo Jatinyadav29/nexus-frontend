@@ -3,15 +3,15 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Register from "../../src/pages/Register";
 import Contact from "../../src/pages/Contact";
-import { mockApi } from "../mocks/server.js";
-import { renderAt, lastCall } from "../utils.jsx";
+import { mockApi } from "../mocks/server";
+import { renderAt, lastCall, callTo, $ } from "../utils";
 
 describe("Register page", () => {
-  const fill = async (container) => {
-    await userEvent.type(container.querySelector('input[type="text"]'), "newbie");
-    await userEvent.type(container.querySelector('input[type="email"]'), "newbie@example.test");
-    await userEvent.type(container.querySelector('input[type="tel"]'), "9000000009");
-    await userEvent.type(container.querySelector('input[type="password"]'), "Password123!");
+  const fill = async (container: HTMLElement) => {
+    await userEvent.type($(container, 'input[type="text"]'), "newbie");
+    await userEvent.type($(container, 'input[type="email"]'), "newbie@example.test");
+    await userEvent.type($(container, 'input[type="tel"]'), "9000000009");
+    await userEvent.type($(container, 'input[type="password"]'), "Password123!");
     await userEvent.click(screen.getByRole("button", { name: "Create Account" }));
   };
 
@@ -23,7 +23,7 @@ describe("Register page", () => {
 
     expect(await screen.findByText("REGISTRATION COMPLETE. LOGIN TO DEPLOY.")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/login"));
-    expect(lastCall(calls, "POST", "/users/register").body).toEqual({
+    expect(callTo(calls, "POST", "/users/register").body).toEqual({
       username: "newbie",
       email: "newbie@example.test",
       phone: "9000000009",
@@ -68,7 +68,7 @@ describe("Contact page", () => {
     message: "Can we book ten PCs for Saturday?",
   };
 
-  const fill = async (values) => {
+  const fill = async (values: Partial<typeof valid>) => {
     if (values.name) await userEvent.type(screen.getByPlaceholderText("John Doe"), values.name);
     if (values.email)
       await userEvent.type(screen.getByPlaceholderText("operative@nexus.com"), values.email);
@@ -112,7 +112,7 @@ describe("Contact page", () => {
     expect(
       await screen.findByText("Transmission successful. HQ will contact you shortly."),
     ).toBeInTheDocument();
-    expect(lastCall(calls, "POST", "/messages").body).toEqual(valid);
+    expect(callTo(calls, "POST", "/messages").body).toEqual(valid);
     expect(screen.getByPlaceholderText("John Doe")).toHaveValue(""); // form reset
   });
 
@@ -123,8 +123,8 @@ describe("Contact page", () => {
     await fill(valid);
 
     await waitFor(() => expect(lastCall(calls, "POST", "/messages")).toBeTruthy());
-    expect(lastCall(calls, "POST", "/messages").url).not.toContain("onrender.com");
-    expect(lastCall(calls, "POST", "/messages").url).toBe("http://localhost:3005/api/messages");
+    expect(callTo(calls, "POST", "/messages").url).not.toContain("onrender.com");
+    expect(callTo(calls, "POST", "/messages").url).toBe("http://localhost:3005/api/messages");
   });
 
   it("DEP-01: follows VITE_API_BASE_URL", async () => {
@@ -136,7 +136,7 @@ describe("Contact page", () => {
       await fill(valid);
 
       await waitFor(() => expect(lastCall(calls, "POST", "/messages")).toBeTruthy());
-      expect(lastCall(calls, "POST", "/messages").url).toBe("https://api.example.test/api/messages");
+      expect(callTo(calls, "POST", "/messages").url).toBe("https://api.example.test/api/messages");
     } finally {
       vi.unstubAllEnvs();
     }

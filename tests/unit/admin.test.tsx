@@ -7,9 +7,9 @@ import { AuthProvider } from "../../src/context/AuthContext";
 import AdminHUD from "../../src/pages/admin/AdminHUD";
 import AdminBookings from "../../src/pages/admin/AdminBookings";
 import AdminMessages from "../../src/pages/admin/AdminMessages";
-import { mockApi } from "../mocks/server.js";
-import { ids } from "../mocks/data.js";
-import { renderAt, lastCall } from "../utils.jsx";
+import { mockApi } from "../mocks/server";
+import { ids } from "../mocks/data";
+import { renderAt, lastCall, callTo, must } from "../utils";
 
 describe("AdminHUD", () => {
   it("shows the loading state, then the stats and the live bookings table", async () => {
@@ -18,9 +18,9 @@ describe("AdminHUD", () => {
 
     expect(screen.getByText("Decrypting Server Data...")).toBeInTheDocument();
     expect(await screen.findByText("Live Deployments Matrix")).toBeInTheDocument();
-    expect(within(screen.getByText("Total Operatives").parentElement).getByText("42")).toBeInTheDocument();
-    expect(within(screen.getByText("Total Stations").parentElement).getByText("8")).toBeInTheDocument();
-    expect(within(screen.getByText("Active Deployments").parentElement).getByText("2")).toBeInTheDocument();
+    expect(within(must(screen.getByText("Total Operatives").parentElement)).getByText("42")).toBeInTheDocument();
+    expect(within(must(screen.getByText("Total Stations").parentElement)).getByText("8")).toBeInTheDocument();
+    expect(within(must(screen.getByText("Active Deployments").parentElement)).getByText("2")).toBeInTheDocument();
     expect(screen.getByText("0B0001")).toBeInTheDocument();
     expect(screen.getByText("PC-01, PC-02")).toBeInTheDocument();
     expect(screen.getByText("kabir")).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe("AdminBookings", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirm Erase" }));
 
     expect(await screen.findByText("DEPLOYMENT ABORTED & ERASED.")).toBeInTheDocument();
-    expect(lastCall(calls, "DELETE", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
+    expect(callTo(calls, "DELETE", "/bookings/").path).toBe(`/api/bookings/${ids.bookingMine}`);
     await waitFor(() => expect(screen.queryByText("riya@example.test")).not.toBeInTheDocument());
     expect(screen.getByText("kabir@example.test")).toBeInTheDocument();
   });
@@ -115,7 +115,7 @@ describe("AdminBookings", () => {
     await userEvent.click(screen.getByRole("button", { name: /Approve Roster/ }));
 
     expect(await screen.findByText("Squad APPROVED!")).toBeInTheDocument();
-    const { path, body } = lastCall(calls, "PUT", "/status");
+    const { path, body } = callTo(calls, "PUT", "/status");
     expect(path).toBe(`/api/tournaments/${ids.tournamentOpen}/team/${ids.team1}/status`);
     expect(body).toEqual({ status: "Approved" });
     await waitFor(() => expect(screen.getByRole("button", { name: /Approve Roster/ })).toBeDisabled());
@@ -131,7 +131,7 @@ describe("AdminBookings", () => {
     await userEvent.click(await screen.findByRole("button", { name: /Reject/ }));
 
     expect(await screen.findByText("Squad REJECTED!")).toBeInTheDocument();
-    expect(lastCall(calls, "PUT", "/status").body).toEqual({ status: "Rejected" });
+    expect(callTo(calls, "PUT", "/status").body).toEqual({ status: "Rejected" });
   });
 
   it("squads tab: shows the empty state when no team is registered", async () => {
@@ -186,7 +186,7 @@ describe("AdminMessages", () => {
     await userEvent.click(screen.getByRole("button", { name: /Mark Read/ }));
 
     expect(await screen.findByText("Transmission marked as Read.")).toBeInTheDocument();
-    expect(lastCall(calls, "PUT", "/messages/").path).toBe(`/api/messages/${ids.messageUnread}/read`);
+    expect(callTo(calls, "PUT", "/messages/").path).toBe(`/api/messages/${ids.messageUnread}/read`);
     await waitFor(() =>
       expect(screen.queryByRole("button", { name: /Mark Read/ })).not.toBeInTheDocument(),
     );
@@ -215,14 +215,14 @@ describe("AdminMessages", () => {
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(await screen.findByText("Transmission deleted from logs.")).toBeInTheDocument();
-    expect(lastCall(calls, "DELETE", "/messages/").path).toBe(`/api/messages/${ids.messageUnread}`);
+    expect(callTo(calls, "DELETE", "/messages/").path).toBe(`/api/messages/${ids.messageUnread}`);
     await waitFor(() => expect(screen.queryByText("Birthday booking")).not.toBeInTheDocument());
   });
 });
 
 // The real router, so the test sees exactly the guard App.jsx applies.
 describe("Admin route guard (AUDIT SEC-20)", () => {
-  const openApp = (url) => {
+  const openApp = (url: string) => {
     window.history.pushState({}, "", url);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(
