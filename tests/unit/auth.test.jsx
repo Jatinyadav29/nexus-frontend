@@ -2,7 +2,7 @@
 import { useContext } from "react";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AuthContext } from "../../src/context/AuthContext.jsx";
+import { AuthContext } from "../../src/context/AuthContext";
 import Login from "../../src/pages/Login.jsx";
 import Layout from "../../src/components/Layout.jsx";
 import ProtectedRoute from "../../src/components/ProtectedRoute.jsx";

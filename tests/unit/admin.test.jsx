@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "../../src/App.jsx";
-import { AuthProvider } from "../../src/context/AuthContext.jsx";
+import { AuthProvider } from "../../src/context/AuthContext";
 import AdminHUD from "../../src/pages/admin/AdminHUD.jsx";
 import AdminBookings from "../../src/pages/admin/AdminBookings.jsx";
 import AdminMessages from "../../src/pages/admin/AdminMessages.jsx";

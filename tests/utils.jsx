@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import { AuthProvider } from "../src/context/AuthContext.jsx";
+import { AuthProvider } from "../src/context/AuthContext";
 
 const LocationProbe = () => {
   const location = useLocation();
