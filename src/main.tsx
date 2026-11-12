@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx";
+import App from "./App";
 import "./index.css";
 import { AnimatePresence } from "framer-motion";
 import BootLoader from "./components/BootLoader";
@@ -35,7 +35,11 @@ const RootComponent = () => {
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+// index.html always has #root; fail loudly if it is ever missing.
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Missing #root element in index.html");
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <RootComponent />
   </React.StrictMode>,
