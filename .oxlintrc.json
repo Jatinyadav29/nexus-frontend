@@ -1,0 +1,38 @@
+{
+  // Lints the TypeScript files (src/, tests/, *.config.ts). ESLint keeps the
+  // remaining .js config file: typescript-eslint does not support TypeScript 7.
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "vitest", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "test-results"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "no-unused-vars": ["error", { "varsIgnorePattern": "^[A-Z_]", "ignoreRestSiblings": true }],
+    // React Compiler rules (also in eslint-plugin-react-hooks 7). The code
+    // they flag predates the TypeScript move; fixing it changes when screens
+    // render, so they warn until each one is reworked and checked against the
+    // UI baseline.
+    "react/set-state-in-effect": "warn",
+    "react/purity": "warn",
+    "react/incompatible-library": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**", "*.config.ts"],
+      "env": { "node": true, "vitest": true }
+    },
+    {
+      // Playwright fixtures call `use(...)`, which is not React's `use` hook.
+      "files": ["tests/e2e/**"],
+      "rules": { "react/rules-of-hooks": "off" }
+    }
+  ]
+}

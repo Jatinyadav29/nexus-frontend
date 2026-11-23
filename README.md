@@ -34,14 +34,14 @@ npm install
 ```
 
 **3. Configure Environment Variables:**
-Create a `.env` file in the root directory and connect it to your local or live backend:
+Copy `.env.example` to `.env.local` and point it at your local or live backend (the value must include `/api`):
 ```env
-REACT_APP_API_URL=http://localhost:5000
+VITE_API_BASE_URL=http://localhost:3005/api
 ```
 
 **4. Initiate Deployment:**
 ```bash
-npm start
+npm run dev
 ```
 
 ---
