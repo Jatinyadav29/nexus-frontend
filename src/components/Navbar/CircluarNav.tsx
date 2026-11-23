@@ -9,13 +9,15 @@ import {
   IoCalendarSharp,
   IoMailSharp,
   IoImagesSharp,
+  IoChatbubblesSharp,
 } from "react-icons/io5";
 
-// 🚨 REMOVED LOGIN, NOW 5 PERFECT SLICES
+// One slice per item; the geometry adapts to the count. Chat added 2026-11-23 (ML-016).
 const menuItems = [
   { label: "Home", icon: <IoHomeSharp />, href: "/" },
   { label: "Tournament", icon: <IoTrophySharp />, href: "/tournament" },
   { label: "Bookings", icon: <IoCalendarSharp />, href: "/bookings" },
+  { label: "Chat", icon: <IoChatbubblesSharp />, href: "/chat" },
   { label: "Contact", icon: <IoMailSharp />, href: "/contact" },
   { label: "Gallery", icon: <IoImagesSharp />, href: "/gallery" },
 ];

@@ -88,3 +88,29 @@ test.describe("page: chat, admin", () => {
     await api.shot("chat-admin-announcements", { fullPage: false });
   });
 });
+
+// The circular menu's Chat slice (added 2026-11-23, ML-016). The open menu
+// had no baseline before; this one covers all six slices.
+test.describe("navigation: chat link", () => {
+  test("nav-menu-open-with-chat @mobile", async ({ page, api }) => {
+    await api.open("/", "Battlefield");
+    await page.locator(".hamburger-bar").first().click();
+    await api.settle();
+    await expect(page.getByRole("link", { name: /Chat/ })).toBeVisible();
+    await api.shot("nav-menu-open-with-chat", { fullPage: false });
+  });
+
+  test("the Chat slice opens /chat", async ({ page, api }) => {
+    api.state.session = "user";
+    await fakeChatServer(page);
+    await api.open("/", "Battlefield");
+    await page.locator(".hamburger-bar").first().click();
+    await api.settle();
+    // Slices are clip-path wedges stacked over each other, so a pointer click at
+    // the link's box centre lands on another slice; dispatch the click instead.
+    await page.getByRole("link", { name: /Chat/ }).dispatchEvent("click");
+    await api.settle();
+    await expect(page).toHaveURL("/chat");
+    await expect(page.getByText(chatMessages[0]!.text)).toBeVisible();
+  });
+});
