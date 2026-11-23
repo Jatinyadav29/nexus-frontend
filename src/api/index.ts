@@ -16,6 +16,12 @@ import type {
   ApiSuccess,
   BookingResponse,
   BookingsResponse,
+  ChatHistoryQuery,
+  ChatMessagesResponse,
+  ChatMuteRequest,
+  ChatMuteResponse,
+  ChatRoomsResponse,
+  ChatTicketResponse,
   CreateBookingRequest,
   CreateBookingResponse,
   CreateMessageRequest,
@@ -24,6 +30,7 @@ import type {
   CreateTournamentResponse,
   DashboardResponse,
   DeleteBookingResponse,
+  DeleteChatMessageResponse,
   DeleteMessageResponse,
   DeleteTournamentResponse,
   HealthResponse,
@@ -58,6 +65,7 @@ import type {
 export { ApiError, apiErrorMessage, getApiBaseUrl, onUnauthorized } from "./client";
 export type * from "./mappers";
 export { toTournamentStatus } from "./mappers";
+export { createChatSocket, getSocketUrl, type ChatSocket } from "./chatSocket";
 
 const id = (value: ObjectId): string => encodeURIComponent(value);
 
@@ -152,8 +160,34 @@ const admin = {
     request<AdminCancelBookingResponse>("PUT", `/admin/booking/${id(bookingId)}/cancel`),
 };
 
+// §1.8 Live chat (REST half; the socket is ./chatSocket)
+const query = (params: Record<string, string | number | undefined>): string => {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) search.set(key, String(value));
+  }
+  const text = search.toString();
+  return text ? `?${text}` : "";
+};
+
+const chat = {
+  /** A 60 s ticket for the Socket.IO handshake. */
+  ticket: () => request<ChatTicketResponse>("POST", "/chat/ticket"),
+  rooms: () => request<ChatRoomsResponse>("GET", "/chat/rooms"),
+  /** Older history, oldest first; pass the first message's `_id` as `before`. */
+  messages: (roomId: ObjectId, { before, limit }: ChatHistoryQuery = {}) =>
+    request<ChatMessagesResponse>(
+      "GET",
+      `/chat/rooms/${id(roomId)}/messages${query({ before, limit })}`,
+    ),
+  removeMessage: (messageId: ObjectId) =>
+    request<DeleteChatMessageResponse>("DELETE", `/chat/messages/${id(messageId)}`),
+  mute: (userId: ObjectId, body: ChatMuteRequest) =>
+    request<ChatMuteResponse>("PUT", `/chat/users/${id(userId)}/mute`, body),
+};
+
 // §0 — 503 rejects with an ApiError like any other non-2xx answer.
 const health = () => request<HealthResponse>("GET", "/health");
 
-export const api = { users, stations, bookings, tournaments, messages, admin, health };
+export const api = { users, stations, bookings, tournaments, messages, admin, chat, health };
 export type Api = typeof api;

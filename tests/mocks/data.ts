@@ -4,6 +4,8 @@
 // (msw/browser), so both see the same API.
 import type {
   BookingType,
+  ChatMessage,
+  ChatRoom,
   BookingUserRef,
   ProfileUser,
   Station,
@@ -25,6 +27,10 @@ export const ids = {
   team2: "65f0000000000000000d0002",
   messageUnread: "65f0000000000000000e0001",
   messageRead: "65f0000000000000000e0002",
+  chatGeneral: "65f0000000000000000f0001",
+  chatAnnouncements: "65f0000000000000000f0002",
+  chatMessage1: "65f0000000000000000f1001",
+  chatMessage2: "65f0000000000000000f1002",
 };
 
 // GET /users/profile → `user`
@@ -233,3 +239,36 @@ export const dashboard = {
   activeBookingsData: bookings,
   totalGamers: 42,
 };
+
+// GET /chat/rooms → `rooms` (§1.8)
+export const chatRooms: ChatRoom[] = [
+  { _id: ids.chatGeneral, slug: "general", name: "General", type: "lobby", tournament: null, readOnly: false },
+  {
+    _id: ids.chatAnnouncements,
+    slug: "announcements",
+    name: "Announcements",
+    type: "announcements",
+    tournament: null,
+    readOnly: true,
+  },
+];
+
+// GET /chat/rooms/:roomId/messages → `messages` (oldest first)
+export const chatMessages: ChatMessage[] = [
+  {
+    _id: ids.chatMessage1,
+    room: ids.chatGeneral,
+    user: ids.other,
+    username: "arjun",
+    text: "Anyone up for a 5v5 tonight?",
+    createdAt: "2030-01-05T18:00:00.000Z",
+  },
+  {
+    _id: ids.chatMessage2,
+    room: ids.chatGeneral,
+    user: ids.user,
+    username: "riya",
+    text: "In! PC-03 to PC-07",
+    createdAt: "2030-01-05T18:01:00.000Z",
+  },
+];

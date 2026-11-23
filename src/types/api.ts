@@ -351,6 +351,96 @@ export type HealthResponse =
   | { success: true; status: "ok" }
   | { success: false; status: "unavailable" };
 
+// ── §1.8 Live chat (ML-016) ────────────────────────────────────────────────
+// REST below; the real-time half is Socket.IO namespace /chat (see the event
+// maps). Text is plain text: render it as text, never as HTML.
+
+export type ChatRoomType = "lobby" | "tournament" | "announcements";
+
+export interface ChatRoom {
+  _id: ObjectId;
+  /** "general", "announcements" or "tournament-<tournamentId>". */
+  slug: string;
+  name: string;
+  type: ChatRoomType;
+  tournament: ObjectId | null;
+  /** Only admins may post. */
+  readOnly: boolean;
+}
+
+export interface ChatMessage {
+  _id: ObjectId;
+  room: ObjectId;
+  user: ObjectId;
+  username: string;
+  text: string;
+  createdAt: IsoDate;
+}
+
+export interface ChatPresenceUser {
+  _id: ObjectId;
+  username: string;
+}
+
+export interface ChatPresence {
+  roomId: ObjectId;
+  count: number;
+  /** At most 100. */
+  users: ChatPresenceUser[];
+}
+
+/** `POST /chat/ticket` (User). The ticket is valid for `expiresIn` seconds. */
+export type ChatTicketResponse = ApiSuccess<{ ticket: string; expiresIn: number }>;
+/** `GET /chat/rooms` (public). */
+export type ChatRoomsResponse = ApiSuccess<{ rooms: ChatRoom[] }>;
+/** `GET /chat/rooms/:roomId/messages?before&limit` (User). Oldest first. */
+export type ChatMessagesResponse = ApiSuccess<{ messages: ChatMessage[]; hasMore: boolean }>;
+export interface ChatHistoryQuery {
+  /** A message `_id`: return messages older than it. */
+  before?: ObjectId;
+  /** 1–100, default 50. */
+  limit?: number;
+}
+/** `DELETE /chat/messages/:messageId` (author within 5 minutes, or Admin). */
+export type DeleteChatMessageResponse = ApiSuccess<{ message: string }>;
+/** `PUT /chat/users/:userId/mute` (Admin). `minutes: 0` lifts the mute. */
+export interface ChatMuteRequest {
+  minutes: number;
+}
+export type ChatMuteResponse = ApiSuccess<{ message: string; mutedUntil: IsoDate | null }>;
+
+// Socket.IO acks use the REST envelope.
+export type ChatAckError = ApiErrorBody & { mutedUntil?: IsoDate };
+export type ChatJoinAck =
+  | ApiSuccess<{ room: ChatRoom; history: ChatMessage[]; presence: ChatPresence }>
+  | ChatAckError;
+export type ChatLeaveAck = ApiSuccess | ChatAckError;
+export type ChatSendAck =
+  | ApiSuccess<{ chatMessage: ChatMessage; duplicate: boolean }>
+  | ChatAckError;
+
+export interface ChatSendPayload {
+  roomId: ObjectId;
+  /** Trimmed by the server; 1–500 characters. */
+  text: string;
+  /** 1–64 of A–Z a–z 0–9 _ -. Reusing it makes a resend idempotent. */
+  clientId: string;
+}
+
+export interface ChatServerToClientEvents {
+  "message:new": (message: ChatMessage) => void;
+  "message:deleted": (payload: { roomId: ObjectId; id: ObjectId }) => void;
+  presence: (payload: ChatPresence) => void;
+  typing: (payload: { roomId: ObjectId; userId: ObjectId; username: string }) => void;
+}
+
+export interface ChatClientToServerEvents {
+  "room:join": (payload: { roomId: ObjectId }, ack: (res: ChatJoinAck) => void) => void;
+  "room:leave": (payload: { roomId: ObjectId }, ack: (res: ChatLeaveAck) => void) => void;
+  "message:send": (payload: ChatSendPayload, ack: (res: ChatSendAck) => void) => void;
+  typing: (payload: { roomId: ObjectId }) => void;
+}
+
 // ── Called by the frontend, not implemented by the backend (contract M-02) ──
 // Profile still calls these; until the routes exist they answer 404
 // "API Endpoint Not Found!". The request shapes are what Profile sends.

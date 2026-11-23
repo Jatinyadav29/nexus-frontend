@@ -5,6 +5,7 @@
 // layer (the hard-coded hosts in Profile.jsx and Contact.jsx are gone).
 import { http, HttpResponse, delay, type HttpHandler } from "msw";
 import type {
+  ChatMuteRequest,
   CreateBookingRequest,
   CreateMessageRequest,
   CreateTournamentRequest,
@@ -347,6 +348,29 @@ export function createHandlers(overrides: Partial<Scenario> = {}) {
       scenario.dashboard === "error"
         ? fail(500, "Error fetching God Eye data")
         : ok({ data: data.dashboard }),
+    ),
+
+    // ── Live chat REST (§1.8; the socket half is mocked per test) ─────────
+    route("post", "/chat/ticket", "user", () => ok({ ticket: "test-chat-ticket", expiresIn: 60 })),
+    route("get", "/chat/rooms", "public", () => ok({ rooms: data.chatRooms })),
+    route("get", "/chat/rooms/:roomId/messages", "user", ({ params }) =>
+      data.chatRooms.some((r) => r._id === params.roomId)
+        ? ok({ messages: params.roomId === data.ids.chatGeneral ? data.chatMessages : [], hasMore: false })
+        : fail(404, "Room not found."),
+    ),
+    route("delete", "/chat/messages/:messageId", "user", ({ params }) => {
+      const message = data.chatMessages.find((m) => m._id === params.messageId);
+      if (!message) return fail(404, "Message not found.");
+      if (state.session !== "admin" && message.user !== sessionProfile()._id) {
+        return fail(403, "You can only delete your own message within 5 minutes.");
+      }
+      return ok({ message: "Message deleted." });
+    }),
+    route<ChatMuteRequest>("put", "/chat/users/:userId/mute", "admin", ({ body }) =>
+      ok({
+        message: body.minutes > 0 ? "User muted." : "User unmuted.",
+        mutedUntil: body.minutes > 0 ? "2030-01-05T18:10:00.000Z" : null,
+      }),
     ),
 
     // ── Fallback (app.js:33) ─────────────────────────────────────────────
