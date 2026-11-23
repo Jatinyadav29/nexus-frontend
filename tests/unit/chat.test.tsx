@@ -3,74 +3,14 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { api, getSocketUrl } from "../../src/api";
 import useChat, { mergeMessages, TYPING_VISIBLE_MS } from "../../src/hooks/useChat";
-import type { ChatMessage, ChatPresence } from "../../src/types/api";
+import type { ChatMessage } from "../../src/types/api";
 import { mockApi } from "../mocks/server";
 import { chatMessages, chatRooms, ids } from "../mocks/data";
 import { callTo } from "../utils";
+import { FakeSocket, io, joinAck, lastSocket, presence, resetSockets } from "../mocks/socket";
 
-// ── A fake socket.io-client socket ───────────────────────────────────────
-type Listener = (...args: never[]) => void;
-type AckHandler = (event: string, payload: unknown) => unknown;
+vi.mock("socket.io-client", async () => (await import("../mocks/socket")).socketIoModule);
 
-class FakeSocket {
-  connected = false;
-  active = false;
-  emitted: Array<{ event: string; payload: unknown }> = [];
-  // Hoisted function below: answers room:join like the server would.
-  ackHandler: AckHandler = (event, payload) => joinAck()(event, payload);
-  private listeners = new Map<string, Listener[]>();
-
-  on(event: string, listener: Listener) {
-    this.listeners.set(event, [...(this.listeners.get(event) ?? []), listener]);
-    return this;
-  }
-  removeAllListeners() {
-    this.listeners.clear();
-    return this;
-  }
-  /** Server → client. */
-  fire(event: string, ...args: unknown[]) {
-    for (const listener of this.listeners.get(event) ?? []) (listener as (...a: unknown[]) => void)(...args);
-  }
-  connect() {
-    this.connected = true;
-    this.active = true;
-    this.fire("connect");
-    return this;
-  }
-  disconnect() {
-    this.connected = false;
-    this.active = false;
-    this.fire("disconnect", "io client disconnect");
-    return this;
-  }
-  emit(event: string, payload: unknown) {
-    this.emitted.push({ event, payload });
-    return this;
-  }
-  timeout() {
-    return {
-      emitWithAck: async (event: string, payload: unknown) => {
-        this.emitted.push({ event, payload });
-        return this.ackHandler(event, payload);
-      },
-    };
-  }
-}
-
-const io = vi.hoisted(() => ({ sockets: [] as unknown[], options: [] as unknown[], urls: [] as string[] }));
-vi.mock("socket.io-client", () => ({
-  io: (url: string, options: unknown) => {
-    const socket = new FakeSocket();
-    io.urls.push(url);
-    io.options.push(options);
-    io.sockets.push(socket);
-    return socket;
-  },
-}));
-
-const lastSocket = () => io.sockets.at(-1) as FakeSocket;
-const presence = (roomId: string, count = 1): ChatPresence => ({ roomId, count, users: [] });
 const msg = (n: number, room = ids.chatGeneral): ChatMessage => ({
   _id: `65f0000000000000000f2${String(n).padStart(3, "0")}`,
   room,
@@ -80,24 +20,7 @@ const msg = (n: number, room = ids.chatGeneral): ChatMessage => ({
   createdAt: `2030-01-05T18:${String(10 + n).padStart(2, "0")}:00.000Z`,
 });
 
-function joinAck(history: ChatMessage[] = chatMessages): AckHandler {
-  return (event, payload) => {
-  if (event === "room:join") {
-    const { roomId } = payload as { roomId: string };
-    const room = chatRooms.find((r) => r._id === roomId);
-    return room
-      ? { success: true, room, history: room._id === ids.chatGeneral ? history : [], presence: presence(roomId) }
-      : { success: false, message: "Room not found." };
-  }
-  return { success: true };
-  };
-}
-
-beforeEach(() => {
-  io.sockets.length = 0;
-  io.options.length = 0;
-  io.urls.length = 0;
-});
+beforeEach(() => resetSockets());
 
 // ── REST ─────────────────────────────────────────────────────────────────
 describe("api.chat (REST)", () => {
@@ -367,17 +290,17 @@ describe("useChat events", () => {
     expect(result.current.messages.map((m) => m._id)).toEqual([...chatMessages.map((m) => m._id), msg(7)._id]);
   });
 
-  it("remove calls DELETE and drops the message; a refusal sets error", async () => {
+  it("remove calls DELETE and drops the message; a refusal rejects with the server message", async () => {
     mockApi({ session: "user" });
     const { result } = await joined();
     await act(async () => {
       await result.current.remove(ids.chatMessage2); // riya's own
     });
     expect(result.current.messages.map((m) => m._id)).toEqual([ids.chatMessage1]);
-    await act(async () => {
-      await result.current.remove(ids.chatMessage1); // someone else's
+    await expect(result.current.remove(ids.chatMessage1)).rejects.toMatchObject({
+      serverMessage: "You can only delete your own message within 5 minutes.",
     });
-    expect(result.current.error).toBe("You can only delete your own message within 5 minutes.");
+    expect(result.current.messages.map((m) => m._id)).toEqual([ids.chatMessage1]);
   });
 
   it("notifyTyping emits at most once per 2 s", async () => {

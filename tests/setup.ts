@@ -28,6 +28,7 @@ window.matchMedia =
   }));
 window.scrollTo = () => {};
 Element.prototype.scrollIntoView = () => {};
+Element.prototype.scrollTo = () => {};
 
 // Any request that is not mocked fails the test: nothing may reach a real host.
 beforeAll(() => server.listen({ onUnhandledFrame: "error" }));

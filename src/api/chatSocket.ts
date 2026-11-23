@@ -35,6 +35,9 @@ export function createChatSocket(): ChatSocket {
   return io(`${getSocketUrl()}/chat`, {
     autoConnect: false,
     withCredentials: false,
+    // WebSocket first (Render supports it); long-polling only if that fails.
+    transports: ["websocket", "polling"],
+    tryAllTransports: true,
     auth: (cb) => {
       request<ChatTicketResponse>("POST", "/chat/ticket").then(
         ({ ticket }) => cb({ ticket }),

@@ -123,6 +123,7 @@ export interface UseChat {
   /** Resolves with the server's ack; rejects if no ack arrives in time. */
   send: (text: string, clientId?: string) => Promise<ChatSendAck>;
   loadOlder: () => Promise<void>;
+  /** Rejects with an ApiError when the server refuses. */
   remove: (messageId: ObjectId) => Promise<void>;
   notifyTyping: () => void;
   /** Try again after status "error" or "disconnected". */
@@ -231,15 +232,13 @@ export default function useChat(roomId: ObjectId | null, { enabled = true }: Use
     }
   }, [roomId, oldest]);
 
+  // Rejects with the ApiError (e.g. 403 after the 5-minute window) so the
+  // screen can show the server's message.
   const remove = useCallback(
     async (messageId: ObjectId) => {
       if (!roomId) return;
-      try {
-        await api.chat.removeMessage(messageId);
-        dispatch({ type: "deleted", roomId, id: messageId });
-      } catch (err) {
-        setError(apiErrorMessage(err) || "Could not delete the message.");
-      }
+      await api.chat.removeMessage(messageId);
+      dispatch({ type: "deleted", roomId, id: messageId });
     },
     [roomId],
   );

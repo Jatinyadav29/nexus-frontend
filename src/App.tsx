@@ -25,6 +25,7 @@ import Register from "./pages/Register";
 import Payment from "./pages/Payment";
 import UpdateBooking from "./components/UpdateBooking";
 import Profile from "./pages/Profile";
+import Chat from "./pages/Chat";
 
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminHUD from "./pages/admin/AdminHUD";
@@ -135,6 +136,16 @@ const AnimatedRoutes = () => {
               <ProtectedRoute>
                 <PageTransition>
                   <UpdateBooking />
+                </PageTransition>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="chat"
+            element={
+              <ProtectedRoute>
+                <PageTransition>
+                  <Chat />
                 </PageTransition>
               </ProtectedRoute>
             }
