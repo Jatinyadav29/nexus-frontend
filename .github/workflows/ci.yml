@@ -1,0 +1,109 @@
+name: CI
+
+# Runs on every pull request and every push to main.
+# Deployment is handled by Vercel's Git integration:
+#   pull request → preview URL, merge to main → production.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Regenerate Playwright screenshot baselines (Linux) and upload them"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (with coverage)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  e2e:
+    name: E2E / visual (Playwright)
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The official Playwright image gives the same fonts and browsers on every
+    # run, so screenshot comparisons are stable. Keep its version in step with
+    # @playwright/test in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+    # Non-blocking until the screenshot baselines are regenerated on Linux
+    # (run this workflow manually with "update_snapshots" ticked, then commit
+    # the uploaded images). Remove this line after that.
+    continue-on-error: true
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Update screenshot baselines
+        if: github.event_name == 'workflow_dispatch' && inputs.update_snapshots
+        run: npm run test:e2e:update
+
+      - name: Run E2E tests
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_snapshots) }}
+        run: npm run test:e2e
+
+      - name: Upload new baselines
+        if: github.event_name == 'workflow_dispatch' && inputs.update_snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-baselines
+          path: tests/e2e/__screenshots__/
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
